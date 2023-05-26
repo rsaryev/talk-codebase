@@ -2,3 +2,4 @@
 /.idea/
 /.vscode/
 /.venv/
+/talk_codebase/__pycache__/

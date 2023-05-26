@@ -3,6 +3,7 @@ import sys
 
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.document_loaders import TextLoader
+from halo import Halo
 
 from talk_codebase.consts import EXCLUDE_DIRS, EXCLUDE_FILES, ALLOW_FILES
 
@@ -21,6 +22,7 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
 
 
 def load_files(root_dir):
+    spinners = Halo(text='Loading files', spinner='dots')
     docs = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         if any(exclude_dir in dirpath for exclude_dir in EXCLUDE_DIRS):
@@ -35,5 +37,5 @@ def load_files(root_dir):
                     docs.extend(loader.load_and_split())
                 except Exception as e:
                     print(f"Error loading file {file}: {e}")
-    print(f"🤖 Loaded {len(docs)} documents")
+    spinners.succeed(f"Loaded {len(docs)} documents")
     return docs

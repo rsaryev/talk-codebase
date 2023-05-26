@@ -6,10 +6,12 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
+from halo import Halo
 
 from talk_codebase.utils import StreamStdOut, load_files
 
 
+@Halo(text='Creating vector store', spinner='dots')
 def create_vector_store(root_dir, openai_api_key):
     docs = load_files(root_dir)
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)

@@ -50,3 +50,5 @@ urllib3==2.0.2
 webencodings==0.5.1
 yarl==1.9.2
 zipp==3.15.0
+
+halo~=0.0.31
