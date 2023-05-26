@@ -39,7 +39,6 @@ rfc3986==2.0.0
 rich==13.3.5
 six==1.16.0
 SQLAlchemy==2.0.15
-talk-codebase==0.1.0
 tenacity==8.2.2
 termcolor==2.3.0
 tiktoken==0.4.0

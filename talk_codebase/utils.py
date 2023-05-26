@@ -1,11 +1,8 @@
 import os
 import sys
 
-from langchain import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.document_loaders import TextLoader
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
 
 from talk_codebase.consts import EXCLUDE_DIRS, EXCLUDE_FILES, ALLOW_FILES
 
@@ -40,15 +37,3 @@ def load_files(root_dir):
                     print(f"Error loading file {file}: {e}")
     print(f"🤖 Loaded {len(docs)} documents")
     return docs
-
-
-def create_retriever(root_dir, openai_api_key):
-    docs = load_files(root_dir)
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-    texts = text_splitter.split_documents(docs)
-
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
-    db = FAISS.from_documents(texts, embeddings)
-    retriever = db.as_retriever()
-
-    return retriever

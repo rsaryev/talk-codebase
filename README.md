@@ -1,7 +1,7 @@
 # talk-codebase is a powerful tool for chatting with your codebase
 
 <p align="center">
-  <img src="https://github.com/rsaryev/talk-codebase/assets/70219513/b0cb4d00-94b6-407e-8545-92e79d442d89" width="800" alt="chat">
+  <img src="https://github.com/rsaryev/talk-codebase/assets/70219513/87a031ec-51e2-4123-abe6-91bb4d248b4d" width="800" alt="chat">
 </p>
 
 ## Description
