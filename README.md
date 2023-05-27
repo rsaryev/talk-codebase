@@ -3,9 +3,9 @@
 [![Node.js Package](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml/badge.svg)](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml)
 
 <p align="center">
-  <img src="https://github.com/rsaryev/talk-codebase/assets/70219513/6d92e905-fb1b-4235-857b-e6e19041ad79" width="800" alt="chat">
+  <img src="https://github.com/rsaryev/talk-codebase/assets/70219513/b5d338f9-14a5-417b-9690-83f5cd66facf" width="800" alt="chat">
 </p>
- 
+
 ## Description
 
 In the chat, you can ask questions about the codebase. AI will answer your questions, and if necessary, it will offer
