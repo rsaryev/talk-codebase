@@ -1,12 +1,12 @@
 import os
 
+from halo import Halo
 from langchain import FAISS
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
-from halo import Halo
 
 from talk_codebase.utils import StreamStdOut, load_files
 

@@ -1,11 +1,33 @@
 import os
 import sys
 
+from git import Repo
+from halo import Halo
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.document_loaders import TextLoader
-from halo import Halo
 
 from talk_codebase.consts import EXCLUDE_DIRS, EXCLUDE_FILES, ALLOW_FILES
+
+
+def get_repo():
+    try:
+        return Repo()
+    except:
+        return None
+
+
+def has_repo():
+    return get_repo() is not None
+
+
+def is_ignored(path):
+    repo = get_repo()
+    if repo is None:
+        return False
+    if not os.path.exists(path):
+        return False
+    ignored = repo.ignored(path)
+    return len(ignored) > 0
 
 
 class StreamStdOut(StreamingStdOutCallbackHandler):
@@ -25,11 +47,15 @@ def load_files(root_dir):
     spinners = Halo(text='Loading files', spinner='dots')
     docs = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
+        if is_ignored(dirpath):
+            continue
         if any(exclude_dir in dirpath for exclude_dir in EXCLUDE_DIRS):
             continue
         if not filenames:
             continue
         for file in filenames:
+            if is_ignored(os.path.join(dirpath, file)):
+                continue
             if any(file.endswith(allow_file) for allow_file in ALLOW_FILES) and not any(
                     file == exclude_file for exclude_file in EXCLUDE_FILES):
                 try:

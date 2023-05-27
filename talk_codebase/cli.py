@@ -1,6 +1,8 @@
 import os
+
 import fire
 import yaml
+
 from talk_codebase.llm import create_vector_store, send_question
 
 
