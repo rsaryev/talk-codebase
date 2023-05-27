@@ -2,6 +2,7 @@ import os
 
 import questionary
 import tiktoken
+from halo import Halo
 from langchain import FAISS
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains import ConversationalRetrievalChain
@@ -42,8 +43,10 @@ def create_vector_store(root_dir, openai_api_key):
     if not approve:
         exit(0)
 
+    spinners = Halo(text='Creating vector store', spinner='dots').start()
     embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     db = FAISS.from_documents(texts, embeddings)
+    spinners.succeed(f"Created vector store with {len(docs)} documents")
 
     return db
 
