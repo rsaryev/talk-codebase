@@ -14,6 +14,9 @@ from talk_codebase.utils import StreamStdOut, load_files
 @Halo(text='Creating vector store', spinner='dots')
 def create_vector_store(root_dir, openai_api_key):
     docs = load_files(root_dir)
+    if len(docs) == 0:
+        print("✘ No documents found")
+        exit(0)
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     texts = text_splitter.split_documents(docs)
 

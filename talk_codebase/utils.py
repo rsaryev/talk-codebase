@@ -9,19 +9,15 @@ from langchain.document_loaders import TextLoader
 from talk_codebase.consts import EXCLUDE_DIRS, EXCLUDE_FILES, ALLOW_FILES
 
 
-def get_repo():
+def get_repo(root_dir):
     try:
-        return Repo()
+        return Repo(root_dir)
     except:
         return None
 
 
-def has_repo():
-    return get_repo() is not None
-
-
-def is_ignored(path):
-    repo = get_repo()
+def is_ignored(path, root_dir):
+    repo = get_repo(root_dir)
     if repo is None:
         return False
     if not os.path.exists(path):
@@ -47,14 +43,14 @@ def load_files(root_dir):
     spinners = Halo(text='Loading files', spinner='dots')
     docs = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
-        if is_ignored(dirpath):
+        if is_ignored(dirpath, root_dir):
             continue
         if any(exclude_dir in dirpath for exclude_dir in EXCLUDE_DIRS):
             continue
         if not filenames:
             continue
         for file in filenames:
-            if is_ignored(os.path.join(dirpath, file)):
+            if is_ignored(os.path.join(dirpath, file), root_dir):
                 continue
             if any(file.endswith(allow_file) for allow_file in ALLOW_FILES) and not any(
                     file == exclude_file for exclude_file in EXCLUDE_FILES):

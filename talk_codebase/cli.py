@@ -33,6 +33,17 @@ def configure():
     save_config(config)
 
 
+def loop(vector_store, api_key, model_name):
+    while True:
+        question = input("👉 ")
+        if not question:
+            print("🤖 Please enter a question.")
+            continue
+        if question.lower() in ('exit', 'quit'):
+            break
+        send_question(question, vector_store, api_key, model_name)
+
+
 def chat(root_dir):
     try:
         config = get_config()
@@ -42,14 +53,7 @@ def chat(root_dir):
             configure()
             chat(root_dir)
         vector_store = create_vector_store(root_dir, api_key)
-        while True:
-            question = input("👉 ")
-            if not question:
-                print("🤖 Please enter a question.")
-                continue
-            if question.lower() in ('exit', 'quit'):
-                break
-            send_question(question, vector_store, api_key, model_name)
+        loop(vector_store, api_key, model_name)
     except KeyboardInterrupt:
         print("\n🤖 Bye!")
     except Exception as e:
