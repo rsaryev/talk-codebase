@@ -13,17 +13,16 @@ from langchain.text_splitter import CharacterTextSplitter
 from talk_codebase.utils import StreamStdOut, load_files
 
 
-def calculate_cost(texts):
-    enc = tiktoken.get_encoding("cl100k_base")
+def calculate_cost(texts, model_name):
+    enc = tiktoken.encoding_for_model(model_name)
     all_text = ''.join([text.page_content for text in texts])
     tokens = enc.encode(all_text)
     token_count = len(tokens)
-    rate_per_thousand_tokens = 0.0004
-    cost = (token_count / 1000) * rate_per_thousand_tokens
+    cost = (token_count / 1000) * 0.0004
     return cost
 
 
-def create_vector_store(root_dir, openai_api_key):
+def create_vector_store(root_dir, openai_api_key, model_name):
     docs = load_files(root_dir)
     if len(docs) == 0:
         print("✘ No documents found")
@@ -31,7 +30,7 @@ def create_vector_store(root_dir, openai_api_key):
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     texts = text_splitter.split_documents(docs)
 
-    cost = calculate_cost(docs)
+    cost = calculate_cost(docs, model_name)
     approve = questionary.select(
         f"Creating a vector store for {len(docs)} documents will cost ~${cost:.5f}. Do you want to continue?",
         choices=[

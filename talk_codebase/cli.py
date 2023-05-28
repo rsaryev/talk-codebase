@@ -52,7 +52,7 @@ def chat(root_dir):
         if not (api_key and model_name):
             configure()
             chat(root_dir)
-        vector_store = create_vector_store(root_dir, api_key)
+        vector_store = create_vector_store(root_dir, api_key, model_name)
         loop(vector_store, api_key, model_name)
     except KeyboardInterrupt:
         print("\n🤖 Bye!")
