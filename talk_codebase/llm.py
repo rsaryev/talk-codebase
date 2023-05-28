@@ -22,7 +22,27 @@ def calculate_cost(texts, model_name):
     return cost
 
 
+def get_local_vector_store(embeddings):
+    try:
+        return FAISS.load_local("vector_store", embeddings)
+    except:
+        return None
+
+
 def create_vector_store(root_dir, openai_api_key, model_name):
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
+    new_db = get_local_vector_store(embeddings)
+    if new_db is not None:
+        approve = questionary.select(
+            f"Found existing vector store. Do you want to use it?",
+            choices=[
+                {"name": "Yes", "value": True},
+                {"name": "No", "value": False},
+            ]
+        ).ask()
+        if approve:
+            return new_db
+
     docs = load_files(root_dir)
     if len(docs) == 0:
         print("✘ No documents found")
@@ -43,8 +63,8 @@ def create_vector_store(root_dir, openai_api_key, model_name):
         exit(0)
 
     spinners = Halo(text='Creating vector store', spinner='dots').start()
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
     db = FAISS.from_documents(texts, embeddings)
+    db.save_local("vector_store")
     spinners.succeed(f"Created vector store with {len(docs)} documents")
 
     return db

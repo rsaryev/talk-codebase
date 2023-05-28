@@ -40,7 +40,7 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
 
 
 def load_files(root_dir):
-    spinners = Halo(text='Loading files', spinner='dots')
+    spinners = Halo(text='Loading files', spinner='dots').start()
     docs = []
     for dirpath, dirnames, filenames in os.walk(root_dir):
         if is_ignored(dirpath, root_dir):
