@@ -34,3 +34,8 @@ talk-codebase configure
 # Help
 talk-codebase --help
 ```
+
+## Requirements
+
+- Python 3.9
+- OpenAI API key [api-keys](https://platform.openai.com/account/api-keys)
