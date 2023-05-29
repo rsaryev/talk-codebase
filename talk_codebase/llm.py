@@ -47,7 +47,7 @@ def create_vector_store(root_dir, openai_api_key, model_name):
     if len(docs) == 0:
         print("✘ No documents found")
         exit(0)
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    text_splitter = CharacterTextSplitter()
     texts = text_splitter.split_documents(docs)
 
     cost = calculate_cost(docs, model_name)
