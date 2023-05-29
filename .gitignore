@@ -3,3 +3,4 @@
 /.vscode/
 /.venv/
 /talk_codebase/__pycache__/
+.DS_Store

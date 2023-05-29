@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "talk-codebase"
-version = "0.1.22"
+version = "0.1.25"
 description = "talk-codebase is a powerful tool for querying and analyzing codebases."
 authors = ["Saryev Rustam <rustam1997@gmail.com>"]
 readme = "README.md"
@@ -18,6 +18,8 @@ halo = "^0.0.31"
 urllib3 = "1.26.6"
 gitpython = "^3.1.31"
 questionary = "^1.10.0"
+gpt4all = "^0.2.3"
+sentence-transformers = "^2.2.2"
 
 
 [build-system]

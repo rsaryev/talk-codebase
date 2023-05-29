@@ -2,8 +2,10 @@ import glob
 import os
 import sys
 
+import tiktoken
 from git import Repo
 from halo import Halo
+from langchain import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.document_loaders import TextLoader
 
@@ -52,3 +54,19 @@ def load_files(root_dir):
             docs.extend(loader.load_and_split())
     spinners.succeed(f"Loaded {len(docs)} documents")
     return docs
+
+
+def calculate_cost(texts, model_name):
+    enc = tiktoken.encoding_for_model(model_name)
+    all_text = ''.join([text.page_content for text in texts])
+    tokens = enc.encode(all_text)
+    token_count = len(tokens)
+    cost = (token_count / 1000) * 0.0004
+    return cost
+
+
+def get_local_vector_store(embeddings, path):
+    try:
+        return FAISS.load_local(path, embeddings)
+    except:
+        return None
