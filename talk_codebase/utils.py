@@ -1,3 +1,4 @@
+import glob
 import os
 import sys
 
@@ -6,7 +7,7 @@ from halo import Halo
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.document_loaders import TextLoader
 
-from talk_codebase.consts import EXCLUDE_DIRS, EXCLUDE_FILES, ALLOW_FILES
+from talk_codebase.consts import EXCLUDE_FILES, ALLOW_FILES
 
 
 def get_repo(root_dir):
@@ -42,22 +43,12 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
 def load_files(root_dir):
     spinners = Halo(text='Loading files', spinner='dots').start()
     docs = []
-    for dirpath, dirnames, filenames in os.walk(root_dir):
-        if is_ignored(dirpath, root_dir):
+    for file_path in glob.glob(os.path.join(root_dir, '**/*'), recursive=True):
+        if is_ignored(file_path, root_dir):
             continue
-        if any(exclude_dir in dirpath for exclude_dir in EXCLUDE_DIRS):
-            continue
-        if not filenames:
-            continue
-        for file in filenames:
-            if is_ignored(os.path.join(dirpath, file), root_dir):
-                continue
-            if any(file.endswith(allow_file) for allow_file in ALLOW_FILES) and not any(
-                    file == exclude_file for exclude_file in EXCLUDE_FILES):
-                try:
-                    loader = TextLoader(os.path.join(dirpath, file), encoding='utf-8')
-                    docs.extend(loader.load_and_split())
-                except Exception as e:
-                    print(f"Error loading file {file}: {e}")
+        if any(file_path.endswith(allow_file) for allow_file in ALLOW_FILES) and not any(
+                file_path.endswith(exclude_file) for exclude_file in EXCLUDE_FILES):
+            loader = TextLoader(file_path, encoding='utf-8')
+            docs.extend(loader.load_and_split())
     spinners.succeed(f"Loaded {len(docs)} documents")
     return docs

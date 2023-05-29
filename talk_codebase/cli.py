@@ -62,7 +62,7 @@ def chat(root_dir):
             configure()
             chat(root_dir)
         else:
-            print(f"🤖 Error: {e}")
+            print(f"\n🤖 Error: {e}")
 
 
 def main():
