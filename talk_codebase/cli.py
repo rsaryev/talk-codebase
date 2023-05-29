@@ -1,14 +1,17 @@
 import os
 
 import fire
+import questionary
 import yaml
 
-from talk_codebase.llm import create_vector_store, send_question
+from talk_codebase.LLM import factory_llm
+from talk_codebase.consts import DEFAULT_CONFIG
 
 
 def get_config():
     home_dir = os.path.expanduser("~")
     config_path = os.path.join(home_dir, ".config.yaml")
+    print(f"🤖 Loading config from {config_path}:")
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -26,50 +29,74 @@ def save_config(config):
 
 def configure():
     config = get_config()
-    api_key = input("🤖 Enter your OpenAI API key: ")
-    model_name = input("🤖 Enter your model name (default: gpt-3.5-turbo): ") or "gpt-3.5-turbo"
-    config["api_key"] = api_key
-    config["model_name"] = model_name
+    model_type = questionary.select(
+        "🤖 Select model type:",
+        choices=[
+            {"name": "OpenAI", "value": "openai"},
+            {"name": "Local", "value": "local"},
+        ]
+    ).ask()
+    config["model_type"] = model_type
+    if model_type == "openai":
+        api_key = input("🤖 Enter your OpenAI API key: ")
+        model_name = input("🤖 Enter your model name (default: gpt-3.5-turbo): ")
+        config["model_name"] = model_name if model_name else DEFAULT_CONFIG["model_name"]
+        config["api_key"] = api_key
+    elif model_type == "local":
+        model_path = input(f"🤖 Enter your model path: (default: {DEFAULT_CONFIG['model_path']}) ")
+        config["model_path"] = model_path if model_path else DEFAULT_CONFIG["model_path"]
     save_config(config)
+    print("🤖 Configuration saved!")
 
 
-def loop(vector_store, api_key, model_name):
+def loop(llm):
     while True:
-        question = input("👉 ")
+        question = input("👉 ").lower().strip()
         if not question:
             print("🤖 Please enter a question.")
             continue
-        if question.lower() in ('exit', 'quit'):
+        if question in ('exit', 'quit'):
             break
-        send_question(question, vector_store, api_key, model_name)
+        llm.send_question(question)
+
+
+def validate_config(config):
+    for key, value in DEFAULT_CONFIG.items():
+        if key not in config:
+            config[key] = value
+    if config.get("model_type") == "openai":
+        api_key = config.get("api_key")
+        if not api_key:
+            print("🤖 Please configure your API key. Use talk-codebase configure --model_type=openai")
+            exit(0)
+    elif config.get("model_type") == "local":
+        model_path = config.get("model_path")
+        if not model_path:
+            print("🤖 Please configure your model path. Use talk-codebase configure --model_type=local")
+            exit(0)
+    save_config(config)
+    return config
 
 
 def chat(root_dir):
+    config = validate_config(get_config())
+    llm = factory_llm(root_dir, config)
+    loop(llm)
+
+
+def main():
     try:
-        config = get_config()
-        api_key = config.get("api_key")
-        model_name = config.get("model_name")
-        if not (api_key and model_name):
-            configure()
-            chat(root_dir)
-        vector_store = create_vector_store(root_dir, api_key, model_name)
-        loop(vector_store, api_key, model_name)
+        fire.Fire({
+            "chat": chat,
+            "configure": configure
+        })
     except KeyboardInterrupt:
         print("\n🤖 Bye!")
     except Exception as e:
         if str(e) == "<empty message>":
-            print("🤖 Please configure your API key.")
-            configure()
-            chat(root_dir)
+            print("🤖 Please configure your API key. Use talk-codebase configure --model_type=openai")
         else:
-            print(f"\n🤖 Error: {e}")
-
-
-def main():
-    fire.Fire({
-        "chat": chat,
-        "configure": configure,
-    })
+            raise e
 
 
 if __name__ == "__main__":
