@@ -5,6 +5,7 @@ import sys
 
 import tiktoken
 from git import Repo
+from halo import Halo
 from langchain import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
@@ -41,6 +42,7 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
         sys.stdout.flush()
 
 
+@Halo(text='📂 Loading files', spinner='dots')
 def load_files(root_dir):
     num_cpus = multiprocessing.cpu_count()
     loaded_files = []
