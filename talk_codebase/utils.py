@@ -1,15 +1,14 @@
 import glob
+import multiprocessing
 import os
 import sys
 
 import tiktoken
 from git import Repo
-from halo import Halo
 from langchain import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.document_loaders import TextLoader
 
-from talk_codebase.consts import EXCLUDE_FILES, ALLOW_FILES
+from talk_codebase.consts import LOADER_MAPPING, EXCLUDE_FILES
 
 
 def get_repo(root_dir):
@@ -43,16 +42,28 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
 
 
 def load_files(root_dir):
-    spinners = Halo(text='Loading files', spinner='dots').start()
-    docs = []
-    for file_path in glob.glob(os.path.join(root_dir, '**/*'), recursive=True):
-        if is_ignored(file_path, root_dir):
-            continue
-        if any(file_path.endswith(allow_file) for allow_file in ALLOW_FILES) and not any(
-                file_path.endswith(exclude_file) for exclude_file in EXCLUDE_FILES):
-            loader = TextLoader(file_path, encoding='utf-8')
-            docs.extend(loader.load_and_split())
-    spinners.succeed(f"Loaded {len(docs)} documents")
+    num_cpus = multiprocessing.cpu_count()
+    loaded_files = []
+    with multiprocessing.Pool(num_cpus) as pool:
+        futures = []
+        for file_path in glob.glob(os.path.join(root_dir, '**/*'), recursive=True):
+            if is_ignored(file_path, root_dir):
+                continue
+            if any(
+                    file_path.endswith(exclude_file) for exclude_file in EXCLUDE_FILES):
+                continue
+            for ext in LOADER_MAPPING:
+                if file_path.endswith(ext):
+                    loader = LOADER_MAPPING[ext]['loader']
+                    args = LOADER_MAPPING[ext]['args']
+                    load = loader(file_path, **args)
+                    futures.append(pool.apply_async(load.load_and_split))
+                    loaded_files.append(file_path)
+        docs = []
+        for future in futures:
+            docs.extend(future.get())
+
+    print('\n' + '\n'.join([f'📄 {os.path.abspath(file_path)}:' for file_path in loaded_files]))
     return docs
 
 
