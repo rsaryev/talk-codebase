@@ -7,10 +7,10 @@ import yaml
 from talk_codebase.LLM import factory_llm
 from talk_codebase.consts import DEFAULT_CONFIG
 
+config_path = os.path.join(os.path.expanduser("~"), ".talk_codebase_config.yaml")
+
 
 def get_config():
-    home_dir = os.path.expanduser("~")
-    config_path = os.path.join(home_dir, ".config.yaml")
     print(f"🤖 Loading config from {config_path}:")
     if os.path.exists(config_path):
         with open(config_path, "r") as f:
@@ -22,7 +22,6 @@ def get_config():
 
 def save_config(config):
     home_dir = os.path.expanduser("~")
-    config_path = os.path.join(home_dir, ".config.yaml")
     with open(config_path, "w") as f:
         yaml.dump(config, f)
 
@@ -67,12 +66,12 @@ def validate_config(config):
     if config.get("model_type") == "openai":
         api_key = config.get("api_key")
         if not api_key:
-            print("🤖 Please configure your API key. Use talk-codebase configure --model_type=openai")
+            print("🤖 Please configure your API key. Use talk-codebase configure")
             exit(0)
     elif config.get("model_type") == "local":
         model_path = config.get("model_path")
         if not model_path:
-            print("🤖 Please configure your model path. Use talk-codebase configure --model_type=local")
+            print("🤖 Please configure your model path. Use talk-codebase configure")
             exit(0)
     save_config(config)
     return config
@@ -94,7 +93,7 @@ def main():
         print("\n🤖 Bye!")
     except Exception as e:
         if str(e) == "<empty message>":
-            print("🤖 Please configure your API key. Use talk-codebase configure --model_type=openai")
+            print("🤖 Please configure your API key. Use talk-codebase configure")
         else:
             raise e
 
