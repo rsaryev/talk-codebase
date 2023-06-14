@@ -38,7 +38,7 @@ def configure():
     config["model_type"] = model_type
     if model_type == "openai":
         api_key = input("🤖 Enter your OpenAI API key: ")
-        model_name = input("🤖 Enter your model name (default: gpt-3.5-turbo): ")
+        model_name = input(f"🤖 Enter your model name (default: {DEFAULT_CONFIG['model_name']}): ")
         config["model_name"] = model_name if model_name else DEFAULT_CONFIG["model_name"]
         config["api_key"] = api_key
     elif model_type == "local":
