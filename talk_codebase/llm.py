@@ -74,7 +74,7 @@ class BaseLLM:
         if index == MODEL_TYPES["OPENAI"]:
             cost = calculate_cost(docs, self.config.get("model_name"))
             approve = questionary.select(
-                f"Creating a vector store for {len(docs)} documents will cost ~${cost:.5f}. Do you want to continue?",
+                f"Creating a vector store will cost ~${cost:.5f}. Do you want to continue?",
                 choices=[
                     {"name": "Yes", "value": True},
                     {"name": "No", "value": False},
@@ -83,11 +83,11 @@ class BaseLLM:
             if not approve:
                 exit(0)
 
-        spinners = Halo(text=f"Creating vector store for {len(docs)} documents", spinner='dots').start()
+        spinners = Halo(text=f"Creating vector store", spinner='dots').start()
         db = FAISS.from_documents(texts, embeddings)
         db.add_documents(texts)
         db.save_local(index_path)
-        spinners.succeed(f"Created vector store for {len(docs)} documents")
+        spinners.succeed(f"Created vector store")
         return db
 
 

@@ -42,10 +42,8 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
         sys.stdout.flush()
 
 
-@Halo(text='📂 Loading files', spinner='dots')
 def load_files(root_dir):
     num_cpus = multiprocessing.cpu_count()
-    loaded_files = []
     with multiprocessing.Pool(num_cpus) as pool:
         futures = []
         for file_path in glob.glob(os.path.join(root_dir, '**/*'), recursive=True):
@@ -56,16 +54,13 @@ def load_files(root_dir):
                 continue
             for ext in LOADER_MAPPING:
                 if file_path.endswith(ext):
-                    loader = LOADER_MAPPING[ext]['loader']
+                    print('\r' + f'📂 Loading files: {file_path}')
                     args = LOADER_MAPPING[ext]['args']
-                    load = loader(file_path, **args)
-                    futures.append(pool.apply_async(load.load_and_split))
-                    loaded_files.append(file_path)
+                    loader = LOADER_MAPPING[ext]['loader'](file_path, *args)
+                    futures.append(pool.apply_async(loader.load))
         docs = []
         for future in futures:
             docs.extend(future.get())
-
-    print('\n' + '\n'.join([f'📄 {os.path.abspath(file_path)}:' for file_path in loaded_files]))
     return docs
 
 

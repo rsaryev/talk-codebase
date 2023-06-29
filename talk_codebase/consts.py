@@ -46,14 +46,9 @@ LOADER_MAPPING = {
     ".pdf": {
         "loader": PDFMinerLoader,
         "args": {}
-    }
+    },
+    ".txt": {
+        "loader": TextLoader,
+        "args": {}
+    },
 }
-
-for ext in ALLOW_FILES:
-    if ext not in LOADER_MAPPING:
-        LOADER_MAPPING[ext] = {
-            "loader": TextLoader,
-            "args": {
-                "encoding": "utf8"
-            }
-        }
