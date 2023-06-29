@@ -19,6 +19,7 @@ DEFAULT_CONFIG = {
     "model_name": "gpt-3.5-turbo-0613",
     "model_path": "models/ggml-gpt4all-j-v1.3-groovy.bin",
     "model_type": MODEL_TYPES["OPENAI"],
+    "temperature": "0.7",
 }
 
 LOADER_MAPPING = {

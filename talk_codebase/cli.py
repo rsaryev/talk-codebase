@@ -4,7 +4,7 @@ import fire
 import questionary
 import yaml
 
-from talk_codebase.LLM import factory_llm
+from talk_codebase.llm import factory_llm
 from talk_codebase.consts import DEFAULT_CONFIG
 
 config_path = os.path.join(os.path.expanduser("~"), ".talk_codebase_config.yaml")
