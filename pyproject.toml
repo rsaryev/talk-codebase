@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "talk-codebase"
-version = "0.1.35"
+version = "0.1.36"
 description = "talk-codebase is a powerful tool for querying and analyzing codebases."
 authors = ["Saryev Rustam <rustam1997@gmail.com>"]
 readme = "README.md"
