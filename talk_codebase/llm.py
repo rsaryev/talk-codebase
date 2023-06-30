@@ -89,10 +89,7 @@ class LocalLLM(BaseLLM):
         docs = self.embedding_search(query, k=int(k))
 
         content = "\n".join([f"content: \n```{s.page_content}```" for s in docs])
-        template = """Given the following content, your task is to answer the question. 
-        Content: {content}
-        Question: {question}
-        """
+        template = "Given the following content, your task is to answer the question.\nQuestion: {question}\n{content}"
 
         prompt = PromptTemplate(template=template, input_variables=["content", "question"]).partial(content=content)
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
