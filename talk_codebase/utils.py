@@ -5,7 +5,6 @@ import sys
 
 import tiktoken
 from git import Repo
-from halo import Halo
 from langchain import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
