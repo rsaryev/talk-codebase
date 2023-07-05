@@ -5,12 +5,11 @@ import gpt4all
 import questionary
 from halo import Halo
 from langchain import FAISS
-from langchain import PromptTemplate, LLMChain
 from langchain.callbacks.manager import CallbackManager
+from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain.llms import LlamaCpp
-from langchain.schema import HumanMessage, SystemMessage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 from talk_codebase.consts import MODEL_TYPES
@@ -35,10 +34,11 @@ class BaseLLM:
         return self.vector_store.search(query, k=k, search_type="similarity")
 
     def _create_vector_store(self, embeddings, index, root_dir):
+        k = int(self.config.get("k"))
         index_path = os.path.join(root_dir, f"vector_store/{index}")
         new_db = get_local_vector_store(embeddings, index_path)
         if new_db is not None:
-            return new_db
+            return new_db.as_retriever(search_kwargs={"k": k})
 
         docs = load_files(root_dir)
         if len(docs) == 0:
@@ -64,7 +64,19 @@ class BaseLLM:
         db.add_documents(texts)
         db.save_local(index_path)
         spinners.succeed(f"Created vector store")
-        return db
+        return db.as_retriever(search_kwargs={"k": k})
+
+    def send_query(self, query):
+        retriever = self._create_store(self.root_dir)
+        qa = RetrievalQA.from_chain_type(
+            llm=self.llm,
+            chain_type="stuff",
+            retriever=retriever,
+            return_source_documents=True
+        )
+        docs = qa(query)
+        file_paths = [os.path.abspath(s.metadata["source"]) for s in docs['source_documents']]
+        print('\n'.join([f'📄 {file_path}:' for file_path in file_paths]))
 
 
 class LocalLLM(BaseLLM):
@@ -77,36 +89,12 @@ class LocalLLM(BaseLLM):
         os.makedirs(self.config.get("model_path"), exist_ok=True)
         gpt4all.GPT4All.retrieve_model(model_name=self.config.get("local_model_name"),
                                        model_path=self.config.get("model_path"))
-        llm = LlamaCpp(
-            model_path=os.path.join(self.config.get("model_path"), self.config.get("local_model_name")),
-            n_ctx=int(self.config.get("max_tokens")),
-            callback_manager=CallbackManager([StreamStdOut()]),
-            temp=float(self.config.get("temperature")),
-            streaming=True,
-            allow_download=True)
+        model_path = os.path.join(self.config.get("model_path"), self.config.get("local_model_name"))
+        model_n_ctx = int(self.config.get("max_tokens"))
+        model_n_batch = int(self.config.get("n_batch"))
+        callbacks = CallbackManager([StreamStdOut()])
+        llm = LlamaCpp(model_path=model_path, n_ctx=model_n_ctx, n_batch=model_n_batch, callbacks=callbacks, verbose=False)
         return llm
-
-    def send_query(self, query):
-        k = self.config.get("k")
-        docs = self.embedding_search(query, k=int(k))
-
-        content = "\n".join([f"content: \n```{s.page_content}```" for s in docs])
-        template = """
-### System:
-Given the following content, your task is to answer the question. {content}
-
-### User:
-{question}
-
-### Response:
-        """
-        prompt = PromptTemplate(template=template, input_variables=["content", "question"]).partial(content=content)
-        llm_chain = LLMChain(prompt=prompt, llm=self.llm)
-
-        llm_chain.run(query)
-
-        file_paths = [os.path.abspath(s.metadata["source"]) for s in docs]
-        print('\n'.join([f'📄 {file_path}:' for file_path in file_paths]))
 
 
 class OpenAILLM(BaseLLM):
@@ -121,23 +109,6 @@ class OpenAILLM(BaseLLM):
                           max_tokens=int(self.config.get("max_tokens")),
                           callback_manager=CallbackManager([StreamStdOut()]),
                           temperature=float(self.config.get("temperature")))
-
-    def send_query(self, query):
-        k = self.config.get("k")
-        docs = self.embedding_search(query, k=int(k))
-
-        content = "\n".join([f"content: \n```{s.page_content}```" for s in docs])
-        prompt = f"Given the following content, your task is to answer the question. \n{content}"
-
-        messages = [
-            SystemMessage(content=prompt),
-            HumanMessage(content=query),
-        ]
-
-        self.llm(messages)
-
-        file_paths = [os.path.abspath(s.metadata["source"]) for s in docs]
-        print('\n'.join([f'📄 {file_path}:' for file_path in file_paths]))
 
 
 def factory_llm(root_dir, config):

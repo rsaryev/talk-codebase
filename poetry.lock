@@ -1013,21 +1013,21 @@ tenacity = ">=8.1.0,<9.0.0"
 
 [[package]]
 name = "llama-cpp-python"
-version = "0.1.67"
+version = "0.1.68"
 description = "A Python wrapper for llama.cpp"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "llama_cpp_python-0.1.67.tar.gz", hash = "sha256:33bdcd42b30df3c21d56ce094132e1cdc0da0f8a27109f8eaf698addad02fd20"},
+    {file = "llama_cpp_python-0.1.68.tar.gz", hash = "sha256:619ca317d771fc0c30ceba68c29c318287cd1cae2eaa14661aec675190295f19"},
 ]
 
 [package.dependencies]
 diskcache = ">=5.6.1,<6.0.0"
 numpy = ">=1.24.4,<2.0.0"
-typing-extensions = ">=4.6.3,<5.0.0"
+typing-extensions = ">=4.7.1,<5.0.0"
 
 [package.extras]
-server = ["fastapi (>=0.98.0,<0.99.0)", "sse-starlette (>=1.6.1,<2.0.0)", "uvicorn (>=0.22.0,<0.23.0)"]
+server = ["fastapi (>=0.99.1,<0.100.0)", "sse-starlette (>=1.6.1,<2.0.0)", "uvicorn (>=0.22.0,<0.23.0)"]
 
 [[package]]
 name = "log-symbols"
@@ -2751,13 +2751,13 @@ vision = ["Pillow"]
 
 [[package]]
 name = "typing-extensions"
-version = "4.6.3"
+version = "4.7.1"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.6.3-py3-none-any.whl", hash = "sha256:88a4153d8505aabbb4e13aacb7c486c2b4a33ca3b3f807914a9b4c844c471c26"},
-    {file = "typing_extensions-4.6.3.tar.gz", hash = "sha256:d91d5919357fe7f681a9f2b5b4cb2a5f1ef0a1e9f59c4d8ff0d3491e05c0ffd5"},
+    {file = "typing_extensions-4.7.1-py3-none-any.whl", hash = "sha256:440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36"},
+    {file = "typing_extensions-4.7.1.tar.gz", hash = "sha256:b75ddc264f0ba5615db7ba217daeb99701ad295353c45f9e95963337ceeeffb2"},
 ]
 
 [[package]]
@@ -3036,4 +3036,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "746d76164cdfcacca19ad7d311ac16f6cf444918cb5cb79d2dcb4e3a8cf4ff63"
+content-hash = "5f25c676904a5e553326d05032e4a9625b67418ea49ae78714789a71252a5aa9"

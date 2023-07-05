@@ -27,6 +27,7 @@ DEFAULT_CONFIG = {
     "openai_model_name": DEFAULT_OPENAI_MODEL,
     "local_model_name": DEFAULT_LOCAL_MODEL,
     "model_path": DEFAULT_MODEL_DIRECTORY,
+    "n_batch": "8",
 }
 
 LOADER_MAPPING = {
