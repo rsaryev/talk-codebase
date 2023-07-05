@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from langchain.document_loaders import CSVLoader, UnstructuredWordDocumentLoader, UnstructuredEPubLoader, \
     PDFMinerLoader, UnstructuredMarkdownLoader, TextLoader
 
@@ -11,15 +14,19 @@ MODEL_TYPES = {
     "OPENAI": "openai",
     "LOCAL": "local",
 }
+DEFAULT_LOCAL_MODEL = "orca-mini-3b.ggmlv3.q4_0.bin"
+DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
+DEFAULT_MODEL_DIRECTORY = os.path.join(str(Path.home()), ".cache", "gpt4all").replace("\\", "\\\\")
+
 DEFAULT_CONFIG = {
     "max_tokens": "2056",
     "chunk_size": "2056",
     "chunk_overlap": "256",
     "k": "1",
-    "model_name": "gpt-3.5-turbo-0613",
-    "model_path": "models/ggml-gpt4all-j-v1.3-groovy.bin",
-    "model_type": MODEL_TYPES["OPENAI"],
     "temperature": "0.7",
+    "openai_model_name": DEFAULT_OPENAI_MODEL,
+    "local_model_name": DEFAULT_LOCAL_MODEL,
+    "model_path": DEFAULT_MODEL_DIRECTORY,
 }
 
 LOADER_MAPPING = {

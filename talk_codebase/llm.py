@@ -1,6 +1,7 @@
 import os
 from typing import Optional
 
+import gpt4all
 import questionary
 from halo import Halo
 from langchain import FAISS
@@ -8,7 +9,7 @@ from langchain import PromptTemplate, LLMChain
 from langchain.callbacks.manager import CallbackManager
 from langchain.chat_models import ChatOpenAI
 from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
-from langchain.llms import GPT4All
+from langchain.llms import LlamaCpp
 from langchain.schema import HumanMessage, SystemMessage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
@@ -37,15 +38,7 @@ class BaseLLM:
         index_path = os.path.join(root_dir, f"vector_store/{index}")
         new_db = get_local_vector_store(embeddings, index_path)
         if new_db is not None:
-            approve = questionary.select(
-                f"Found existing vector store. Do you want to use it?",
-                choices=[
-                    {"name": "Yes", "value": True},
-                    {"name": "No", "value": False},
-                ]
-            ).ask()
-            if approve:
-                return new_db
+            return new_db
 
         docs = load_files(root_dir)
         if len(docs) == 0:
@@ -55,7 +48,7 @@ class BaseLLM:
                                                        chunk_overlap=int(self.config.get("chunk_overlap")))
         texts = text_splitter.split_documents(docs)
         if index == MODEL_TYPES["OPENAI"]:
-            cost = calculate_cost(docs, self.config.get("model_name"))
+            cost = calculate_cost(docs, self.config.get("openai_model_name"))
             approve = questionary.select(
                 f"Creating a vector store will cost ~${cost:.5f}. Do you want to continue?",
                 choices=[
@@ -81,7 +74,16 @@ class LocalLLM(BaseLLM):
         return self._create_vector_store(embeddings, MODEL_TYPES["LOCAL"], root_dir)
 
     def _create_model(self):
-        llm = GPT4All(model=self.config.get("model_path"), n_ctx=int(self.config.get("max_tokens")), streaming=True)
+        os.makedirs(self.config.get("model_path"), exist_ok=True)
+        gpt4all.GPT4All.retrieve_model(model_name=self.config.get("local_model_name"),
+                                       model_path=self.config.get("model_path"))
+        llm = LlamaCpp(
+            model_path=os.path.join(self.config.get("model_path"), self.config.get("local_model_name")),
+            n_ctx=int(self.config.get("max_tokens")),
+            callback_manager=CallbackManager([StreamStdOut()]),
+            temp=float(self.config.get("temperature")),
+            streaming=True,
+            allow_download=True)
         return llm
 
     def send_query(self, query):
@@ -89,8 +91,15 @@ class LocalLLM(BaseLLM):
         docs = self.embedding_search(query, k=int(k))
 
         content = "\n".join([f"content: \n```{s.page_content}```" for s in docs])
-        template = "Given the following content, your task is to answer the question.\nQuestion: {question}\n{content}"
+        template = """
+### System:
+Given the following content, your task is to answer the question. {content}
 
+### User:
+{question}
+
+### Response:
+        """
         prompt = PromptTemplate(template=template, input_variables=["content", "question"]).partial(content=content)
         llm_chain = LLMChain(prompt=prompt, llm=self.llm)
 
@@ -106,7 +115,7 @@ class OpenAILLM(BaseLLM):
         return self._create_vector_store(embeddings, MODEL_TYPES["OPENAI"], root_dir)
 
     def _create_model(self):
-        return ChatOpenAI(model_name=self.config.get("model_name"),
+        return ChatOpenAI(model_name=self.config.get("openai_model_name"),
                           openai_api_key=self.config.get("api_key"),
                           streaming=True,
                           max_tokens=int(self.config.get("max_tokens")),

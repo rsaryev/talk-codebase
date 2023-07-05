@@ -1,8 +1,9 @@
 ## talk-codebase 
 [![Node.js Package](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml/badge.svg)](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml)
 
+* Simple configuration in just a couple of clicks
 * Talk-codebase is a tool that allows you to converse with your codebase using LLMs (Large Language Models) to answer your queries.
-* It supports offline code processing using [GPT4All](https://github.com/nomic-ai/gpt4all) without sharing your code with third parties, or you can use OpenAI if privacy is not a concern for you.
+* It supports offline code processing using LlamaCpp and [GPT4All](https://github.com/nomic-ai/gpt4all) without sharing your code with third parties, or you can use OpenAI if privacy is not a concern for you.
 * Talk-codebase is still under development, but it is a tool that can help you to improve your code. It is only recommended for educational purposes and not for production use.
 
 <p align="center">
@@ -15,18 +16,20 @@ To install talk-codebase, you need to have:
 
 * Python 3.9
 * An OpenAI API [api-keys](https://platform.openai.com/account/api-keys)
-* (Optional) [GPT4All](https://gpt4all.io) model
 
 ```bash
 # Install talk-codebase
 pip install talk-codebase
 
-# Configure talk-codebase
-talk-codebase configure
-
 # If you want some files to be ignored, add them to .gitignore.
 # Once `talk-codebase` is installed, you can use it to chat with your codebase in the current directory by running the following command:
 talk-codebase chat .
+```
+
+## Reset configuration
+```bash
+# If you want to reset the configuration, you can run the following command:
+talk-codebase configure
 ```
 
 ## Advanced configuration
@@ -48,9 +51,12 @@ k: 4
 max_tokens: 1048
 
 # Configuration for the LLM model
-model_name: gpt-3.5-turbo
-model_path: models/ggml-gpt4all-j-v1.3-groovy.bin
+openai_model_name: gpt-3.5-turbo
+# Type of model to use. You can choose between `openai` and `local`.
 model_type: openai
+local_model_name: orca-mini-7b.ggmlv3.q4_0.bin
+# Path to local model. If you want to use a local model, you need to specify the path to it.
+model_path: 'absolute path to local model'
 ```
 
 ## Supports the following extensions:
