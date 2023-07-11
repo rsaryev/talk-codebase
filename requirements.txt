@@ -44,7 +44,7 @@ questionary==1.10.0
 regex==2023.5.5
 requests==2.31.0
 scikit-learn==1.2.2
-scipy==1.9.3
+scipy==1.10.0
 sentence-transformers==2.2.2
 sentencepiece==0.1.99
 six==1.16.0
