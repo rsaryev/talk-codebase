@@ -23,10 +23,16 @@ Select model type: Local or OpenAI
 
 <img width="300" alt="select_type" src="https://github.com/rsaryev/talk-codebase/assets/70219513/05196fe5-78ff-44ff-8ca3-0313ccef572a">
 
+OpenAI
 
 If you use the OpenAI model, you need an OpenAI API key. You can get it from [here](https://beta.openai.com/). Then you will be offered a choice of available models.
 
 <img width="300" alt="select" src="https://github.com/rsaryev/talk-codebase/assets/70219513/889ad7c8-a489-4ce8-83af-148b7df09229">
+
+
+Local
+
+<img width="696" alt="Снимок экрана 2023-07-12 в 03 47 58" src="https://github.com/rsaryev/talk-codebase/assets/70219513/16988911-c605-4570-bfb4-4a34a03cd4a1">
 
 If you want some files to be ignored, add them to .gitignore.
 
