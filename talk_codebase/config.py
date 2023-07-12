@@ -115,9 +115,10 @@ def configure_api_key(config):
     if config.get("model_type") != MODEL_TYPES["OPENAI"]:
         return
 
-    api_key = get_and_validate_api_key()
-    config["api_key"] = api_key
-    save_config(config)
+    if api_key_is_invalid(config.get("api_key")):
+        api_key = get_and_validate_api_key()
+        config["api_key"] = api_key
+        save_config(config)
 
 
 def remove_api_key():

@@ -1,10 +1,7 @@
-## talk-codebase 
+# talk-codebase
 [![Node.js Package](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml/badge.svg)](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml)
 
-* Simple configuration in just a couple of clicks
-* Talk-codebase is a tool that allows you to converse with your codebase using LLMs (Large Language Models) to answer your queries.
-* It supports offline code processing using LlamaCpp and [GPT4All](https://github.com/nomic-ai/gpt4all) without sharing your code with third parties, or you can use OpenAI if privacy is not a concern for you.
-* Talk-codebase is still under development, but it is a tool that can help you to improve your code. It is only recommended for educational purposes and not for production use.
+Talk-codebase is a tool that allows you to converse with your codebase using Large Language Models (LLMs) to answer your queries. It supports offline code processing using LlamaCpp and [GPT4All](https://github.com/nomic-ai/gpt4all) without sharing your code with third parties, or you can use OpenAI if privacy is not a concern for you. Please note that talk-codebase is still under development and is recommended for educational purposes, not for production use.
 
 <p align="center">
   <img src="https://github.com/rsaryev/talk-codebase/assets/70219513/b5d338f9-14a5-417b-9690-83f5cd66facf" width="800" alt="chat">
@@ -12,54 +9,40 @@
 
 ## Installation
 
-To install talk-codebase, you need to have:
+```bash
+pip install talk-codebase
+```
 
-* Python 3.9
-* An OpenAI API [api-keys](https://platform.openai.com/account/api-keys)
+After installation, you can use it to chat with your codebase in the current directory by running the following command:
 
 ```bash
-# Install talk-codebase
-pip install talk-codebase
-
-# If you want some files to be ignored, add them to .gitignore.
-# Once `talk-codebase` is installed, you can use it to chat with your codebase in the current directory by running the following command:
 talk-codebase chat .
 ```
 
+Select model type: Local or OpenAI
+
+<img width="300" alt="select_type" src="https://github.com/rsaryev/talk-codebase/assets/70219513/05196fe5-78ff-44ff-8ca3-0313ccef572a">
+
+
+If you use the OpenAI model, you need an OpenAI API key. You can get it from [here](https://beta.openai.com/). Then you will be offered a choice of available models.
+
+<img width="300" alt="select" src="https://github.com/rsaryev/talk-codebase/assets/70219513/889ad7c8-a489-4ce8-83af-148b7df09229">
+
+If you want some files to be ignored, add them to .gitignore.
+
 ## Reset configuration
+
+To reset the configuration, run the following command:
+
 ```bash
-# If you want to reset the configuration, you can run the following command:
 talk-codebase configure
 ```
 
 ## Advanced configuration
 
-You can also edit the configuration manually by editing the `~/.config.yaml` file.
-If for some reason you cannot find the configuration file, just run the tool and at the very beginning it will output
-the path to the configuration file.
+You can manually edit the configuration by editing the `~/.config.yaml` file. If you cannot find the configuration file, run the tool and it will output the path to the configuration file at the very beginning.
 
-```yaml
-# The OpenAI API key. You can get it from https://beta.openai.com/account/api-keys
-api_key: sk-xxx
-
-# Configuration for chunking
-chunk_overlap: 50
-chunk_size: 500
-
-# Configuration for sampling
-k: 4
-max_tokens: 1048
-
-# Configuration for the LLM model
-openai_model_name: gpt-3.5-turbo
-# Type of model to use. You can choose between `openai` and `local`.
-model_type: openai
-local_model_name: orca-mini-7b.ggmlv3.q4_0.bin
-# Path to local model. If you want to use a local model, you need to specify the path to it.
-model_path: 'absolute path to local model'
-```
-
-## Supports the following extensions:
+## Supported Extensions
 
 - [x] `.csv`
 - [x] `.doc`
