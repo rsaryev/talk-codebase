@@ -15,7 +15,6 @@ MODEL_TYPES = {
     "LOCAL": "local",
 }
 DEFAULT_LOCAL_MODEL = "orca-mini-3b.ggmlv3.q4_0.bin"
-DEFAULT_OPENAI_MODEL = "gpt-3.5-turbo"
 DEFAULT_MODEL_DIRECTORY = os.path.join(str(Path.home()), ".cache", "gpt4all").replace("\\", "\\\\")
 
 DEFAULT_CONFIG = {
@@ -24,7 +23,6 @@ DEFAULT_CONFIG = {
     "chunk_overlap": "256",
     "k": "1",
     "temperature": "0.7",
-    "openai_model_name": DEFAULT_OPENAI_MODEL,
     "local_model_name": DEFAULT_LOCAL_MODEL,
     "model_path": DEFAULT_MODEL_DIRECTORY,
     "n_batch": "8",
