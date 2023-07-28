@@ -16,7 +16,7 @@ pip install talk-codebase
 After installation, you can use it to chat with your codebase in the current directory by running the following command:
 
 ```bash
-talk-codebase chat .
+talk-codebase chat <path>
 ```
 
 Select model type: Local or OpenAI
