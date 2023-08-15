@@ -20,7 +20,7 @@ DEFAULT_CONFIG = {
     "max_tokens": "2056",
     "chunk_size": "2056",
     "chunk_overlap": "256",
-    "k": "1",
+    "k": "2",
     "temperature": "0.7",
     "model_path": DEFAULT_MODEL_DIRECTORY,
     "n_batch": "8",

@@ -94,6 +94,7 @@ class LocalLLM(BaseLLM):
         model_n_batch = int(self.config.get("n_batch"))
         callbacks = CallbackManager([StreamStdOut()])
         llm = LlamaCpp(model_path=model_path, n_ctx=model_n_ctx, n_batch=model_n_batch, callbacks=callbacks, verbose=False)
+        llm.client.verbose = False
         return llm
 
 

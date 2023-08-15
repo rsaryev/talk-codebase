@@ -1,9 +1,17 @@
+import sys
+
 import fire
 
 from talk_codebase.config import CONFIGURE_STEPS, save_config, get_config, config_path, remove_api_key, \
-    remove_model_type
+    remove_model_type, remove_model_name_local
 from talk_codebase.consts import DEFAULT_CONFIG
 from talk_codebase.llm import factory_llm
+
+
+def check_python_version():
+    if sys.version_info < (3, 8, 1):
+        print("🤖 Please use Python 3.8.1 or higher")
+        sys.exit(1)
 
 
 def update_config(config):
@@ -17,6 +25,7 @@ def configure(reset=True):
     if reset:
         remove_api_key()
         remove_model_type()
+        remove_model_name_local()
     config = get_config()
     config = update_config(config)
     for step in CONFIGURE_STEPS:
@@ -43,6 +52,7 @@ def chat(root_dir=None):
 
 
 def main():
+    check_python_version()
     print(f"🤖 Config path: {config_path}:")
     try:
         fire.Fire({

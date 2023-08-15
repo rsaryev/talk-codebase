@@ -102,6 +102,12 @@ def configure_model_name_local(config):
     print("🤖 Model name saved!")
 
 
+def remove_model_name_local():
+    config = get_config()
+    config["local_model_name"] = None
+    save_config(config)
+
+
 def get_and_validate_api_key():
     prompt = "🤖 Enter your OpenAI API key: "
     api_key = input(prompt)
