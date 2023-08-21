@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Optional
 
 import gpt4all
@@ -40,7 +41,7 @@ class BaseLLM:
         if new_db is not None:
             return new_db.as_retriever(search_kwargs={"k": k})
 
-        docs = load_files(root_dir)
+        docs = load_files()
         if len(docs) == 0:
             print("✘ No documents found")
             exit(0)
@@ -60,9 +61,13 @@ class BaseLLM:
                 exit(0)
 
         spinners = Halo(text=f"Creating vector store", spinner='dots').start()
-        db = FAISS.from_documents(texts, embeddings)
-        db.add_documents(texts)
-        db.save_local(index_path)
+        db = FAISS.from_documents([texts[0]], embeddings)
+        for i, text in enumerate(texts[1:]):
+            spinners.text = f"Creating vector store ({i + 1}/{len(texts)})"
+            db.add_documents([text])
+            db.save_local(index_path)
+            time.sleep(1.5)
+
         spinners.succeed(f"Created vector store")
         return db.as_retriever(search_kwargs={"k": k})
 
@@ -93,7 +98,8 @@ class LocalLLM(BaseLLM):
         model_n_ctx = int(self.config.get("max_tokens"))
         model_n_batch = int(self.config.get("n_batch"))
         callbacks = CallbackManager([StreamStdOut()])
-        llm = LlamaCpp(model_path=model_path, n_ctx=model_n_ctx, n_batch=model_n_batch, callbacks=callbacks, verbose=False)
+        llm = LlamaCpp(model_path=model_path, n_ctx=model_n_ctx, n_batch=model_n_batch, callbacks=callbacks,
+                       verbose=False)
         llm.client.verbose = False
         return llm
 

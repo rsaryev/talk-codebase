@@ -152,7 +152,6 @@ def configure_model_type(config):
     ).ask()
     config["model_type"] = model_type
     save_config(config)
-    print("🤖 Model type saved!")
 
 
 CONFIGURE_STEPS = [

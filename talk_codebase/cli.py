@@ -6,6 +6,7 @@ from talk_codebase.config import CONFIGURE_STEPS, save_config, get_config, confi
     remove_model_type, remove_model_name_local
 from talk_codebase.consts import DEFAULT_CONFIG
 from talk_codebase.llm import factory_llm
+from talk_codebase.utils import get_repo
 
 
 def check_python_version():
@@ -44,10 +45,14 @@ def chat_loop(llm):
         llm.send_query(query)
 
 
-def chat(root_dir=None):
+def chat():
     configure(False)
     config = get_config()
-    llm = factory_llm(root_dir, config)
+    repo = get_repo()
+    if not repo:
+        print("🤖 Git repository not found")
+        sys.exit(1)
+    llm = factory_llm(repo.working_dir, config)
     chat_loop(llm)
 
 

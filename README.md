@@ -14,6 +14,7 @@ talk-codebase is still under development and is recommended for educational purp
 ## Installation
 
 Requirement Python 3.8.1 or higher
+Your project must be in a git repository
 
 ```bash
 pip install talk-codebase

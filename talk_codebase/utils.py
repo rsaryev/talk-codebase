@@ -1,6 +1,3 @@
-import glob
-import multiprocessing
-import os
 import sys
 
 import tiktoken
@@ -11,21 +8,11 @@ from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from talk_codebase.consts import LOADER_MAPPING, EXCLUDE_FILES
 
 
-def get_repo(root_dir):
+def get_repo():
     try:
-        return Repo(root_dir)
+        return Repo()
     except:
         return None
-
-
-def is_ignored(path, root_dir):
-    repo = get_repo(root_dir)
-    if repo is None:
-        return False
-    if not os.path.exists(path):
-        return False
-    ignored = repo.ignored(path)
-    return len(ignored) > 0
 
 
 class StreamStdOut(StreamingStdOutCallbackHandler):
@@ -41,26 +28,24 @@ class StreamStdOut(StreamingStdOutCallbackHandler):
         sys.stdout.flush()
 
 
-def load_files(root_dir):
-    num_cpus = multiprocessing.cpu_count()
-    with multiprocessing.Pool(num_cpus) as pool:
-        futures = []
-        for file_path in glob.glob(os.path.join(root_dir, '**/*'), recursive=True):
-            if is_ignored(file_path, root_dir):
-                continue
-            if any(
-                    file_path.endswith(exclude_file) for exclude_file in EXCLUDE_FILES):
-                continue
-            for ext in LOADER_MAPPING:
-                if file_path.endswith(ext):
-                    print('\r' + f'📂 Loading files: {file_path}')
-                    args = LOADER_MAPPING[ext]['args']
-                    loader = LOADER_MAPPING[ext]['loader'](file_path, *args)
-                    futures.append(pool.apply_async(loader.load))
-        docs = []
-        for future in futures:
-            docs.extend(future.get())
-    return docs
+def load_files():
+    repo = get_repo()
+    if repo is None:
+        return []
+    files = []
+    tree = repo.tree()
+    for blob in tree.traverse():
+        path = blob.path
+        if any(
+                path.endswith(exclude_file) for exclude_file in EXCLUDE_FILES):
+            continue
+        for ext in LOADER_MAPPING:
+            if path.endswith(ext):
+                print('\r' + f'📂 Loading files: {path}')
+                args = LOADER_MAPPING[ext]['args']
+                loader = LOADER_MAPPING[ext]['loader'](path, *args)
+                files.extend(loader.load())
+    return files
 
 
 def calculate_cost(texts, model_name):
