@@ -20,7 +20,7 @@ questionary = "^1.10.0"
 sentence-transformers = "^2.2.2"
 unstructured = "^0.6.10"
 gpt4all = "^1.0.1"
-langchain = ">=0.0.223,<0.0.237"
+langchain = ">=0.0.223,<0.0.326"
 llama-cpp-python = "0.1.68"
 
 [tool.poetry.group.dev.dependencies]
