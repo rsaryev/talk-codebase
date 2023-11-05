@@ -5,7 +5,7 @@ from typing import Optional
 import gpt4all
 import questionary
 from halo import Halo
-from langchain import FAISS
+from langchain.vectorstores import FAISS
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI

@@ -2,7 +2,7 @@ import sys
 
 import tiktoken
 from git import Repo
-from langchain import FAISS
+from langchain.vectorstores import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 from talk_codebase.consts import LOADER_MAPPING, EXCLUDE_FILES
