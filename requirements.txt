@@ -21,7 +21,7 @@ huggingface-hub==0.14.1
 idna==3.4
 Jinja2==3.1.2
 joblib==1.2.0
-langchain==0.0.236
+langchain==0.0.325
 log-symbols==0.0.14
 MarkupSafe==2.1.2
 marshmallow==3.19.0
