@@ -12,6 +12,7 @@ ALLOW_FILES = ['.txt', '.js', '.mjs', '.ts', '.tsx', '.css', '.scss', '.less', '
 EXCLUDE_FILES = ['requirements.txt', 'package.json', 'package-lock.json', 'yarn.lock']
 MODEL_TYPES = {
     "OPENAI": "openai",
+    "ANTHROPIC": "anthropic",
     "LOCAL": "local",
 }
 DEFAULT_MODEL_DIRECTORY = os.path.join(str(Path.home()), ".cache", "gpt4all").replace("\\", "\\\\")

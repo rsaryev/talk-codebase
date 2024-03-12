@@ -22,6 +22,8 @@ unstructured = "^0.6.10"
 gpt4all = "^1.0.1"
 langchain = ">=0.0.223,<0.1.1"
 llama-cpp-python = "0.1.68"
+anthropic = "^0.19.2"
+langchain-anthropic = "^0.1.4"
 
 [tool.poetry.group.dev.dependencies]
 setuptools = "^68.0.0"

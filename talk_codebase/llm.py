@@ -9,6 +9,7 @@ from langchain.vectorstores import FAISS
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain.llms import LlamaCpp
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -48,8 +49,8 @@ class BaseLLM:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(self.config.get("chunk_size")),
                                                        chunk_overlap=int(self.config.get("chunk_overlap")))
         texts = text_splitter.split_documents(docs)
-        if index == MODEL_TYPES["OPENAI"]:
-            cost = calculate_cost(docs, self.config.get("openai_model_name"))
+        if index == MODEL_TYPES["OPENAI"] or index == MODEL_TYPES["ANTHROPIC"]:
+            cost = calculate_cost(docs, self.config.get("openai_model_name") or "gpt-4")
             approve = questionary.select(
                 f"Creating a vector store will cost ~${cost:.5f}. Do you want to continue?",
                 choices=[
@@ -106,20 +107,34 @@ class LocalLLM(BaseLLM):
 
 class OpenAILLM(BaseLLM):
     def _create_store(self, root_dir: str) -> Optional[FAISS]:
-        embeddings = OpenAIEmbeddings(openai_api_key=self.config.get("api_key"))
+        embeddings = OpenAIEmbeddings(openai_api_key=self.config.get("openai_api_key"))
         return self._create_vector_store(embeddings, MODEL_TYPES["OPENAI"], root_dir)
 
     def _create_model(self):
         return ChatOpenAI(model_name=self.config.get("openai_model_name"),
-                          openai_api_key=self.config.get("api_key"),
+                          openai_api_key=self.config.get("openai_api_key"),
                           streaming=True,
                           max_tokens=int(self.config.get("max_tokens")),
                           callback_manager=CallbackManager([StreamStdOut()]),
                           temperature=float(self.config.get("temperature")))
 
+class AnthropicLLM(BaseLLM):
+    def _create_store(self, root_dir: str) -> Optional[FAISS]:
+        embeddings = OpenAIEmbeddings(openai_api_key=self.config.get("openai_api_key"))
+        return self._create_vector_store(embeddings, MODEL_TYPES["OPENAI"], root_dir)
+    
+    def _create_model(self):
+        return ChatAnthropic(model_name=self.config.get("anthropic_model_name"),
+                          anthropic_api_key=self.config.get("anthropic_api_key"),
+                          streaming=True,
+                          max_tokens_to_sample=int(self.config.get("max_tokens")),
+                          callback_manager=CallbackManager([StreamStdOut()]),
+                          temperature=float(self.config.get("temperature")))
 
 def factory_llm(root_dir, config):
     if config.get("model_type") == "openai":
         return OpenAILLM(root_dir, config)
+    elif config.get("model_type") == "anthropic":
+        return AnthropicLLM(root_dir, config)
     else:
         return LocalLLM(root_dir, config)
