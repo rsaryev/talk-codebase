@@ -2,7 +2,7 @@ import sys
 
 import fire
 
-from talk_codebase.config import CONFIGURE_STEPS, save_config, get_config, config_path, remove_api_key, \
+from talk_codebase.config import CONFIGURE_STEPS, save_config, get_config, config_path, remove_api_keys, \
     remove_model_type, remove_model_name_local
 from talk_codebase.consts import DEFAULT_CONFIG
 from talk_codebase.llm import factory_llm
@@ -24,7 +24,7 @@ def update_config(config):
 
 def configure(reset=True):
     if reset:
-        remove_api_key()
+        remove_api_keys()
         remove_model_type()
         remove_model_name_local()
     config = get_config()

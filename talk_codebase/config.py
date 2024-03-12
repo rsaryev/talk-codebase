@@ -2,6 +2,7 @@ import os
 
 import gpt4all
 import openai
+import anthropic
 import questionary
 import yaml
 
@@ -24,13 +25,23 @@ def save_config(config):
         yaml.dump(config, f)
 
 
-def api_key_is_invalid(api_key):
+def api_key_is_invalid(api_key, api_type):
     if not api_key:
         return True
     try:
-        openai.api_key = api_key
-        openai.Engine.list()
-    except Exception:
+        if api_type == "openai":
+            openai.api_key = api_key
+            openai.Engine.list()
+        elif api_type == "anthropic":
+            client = anthropic.Anthropic(api_key=api_key)
+            client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=5,
+                messages=[
+                    {"role": "user", "content": "Hello, world"}
+            ])
+    except Exception as e:
+        print(e)
         return True
     return False
 
@@ -46,7 +57,7 @@ def get_gpt_models(openai):
 
 
 def configure_model_name_openai(config):
-    api_key = config.get("api_key")
+    api_key = config.get("openai_api_key")
 
     if config.get("model_type") != MODEL_TYPES["OPENAI"] or config.get("openai_model_name"):
         return
@@ -69,6 +80,22 @@ def configure_model_name_openai(config):
     save_config(config)
     print("🤖 Model name saved!")
 
+def configure_model_name_anthropic(config):
+    api_key = config.get("anthropic_api_key")
+    if config.get("model_type") != MODEL_TYPES["ANTHROPIC"] or config.get("anthropic_model_name"):
+        return
+    
+    choices = [ {"name": "Claude 3 Opus", "value": "claude-3-opus-20240229"}, {"name": "Claude 3 Sonnet", "value": "claude-3-sonnet-20240229"}]
+
+    model_name = questionary.select("🤖 Select model name:", choices).ask()
+
+    if not model_name:
+        print("✘ No model selected")
+        return
+    
+    config["anthropic_model_name"] = model_name
+    save_config(config)
+    print("🤖 Model name saved!")
 
 def remove_model_name_openai():
     config = get_config()
@@ -108,28 +135,36 @@ def remove_model_name_local():
     save_config(config)
 
 
-def get_and_validate_api_key():
-    prompt = "🤖 Enter your OpenAI API key: "
+def get_and_validate_api_key(api_type):
+    prompt = f"🤖 Enter your {api_type.capitalize()} API key: "
     api_key = input(prompt)
-    while api_key_is_invalid(api_key):
+    while api_key_is_invalid(api_key, api_type):
         print("✘ Invalid API key")
         api_key = input(prompt)
     return api_key
 
 
-def configure_api_key(config):
-    if config.get("model_type") != MODEL_TYPES["OPENAI"]:
-        return
+def configure_api_keys(config):
+    if config.get("model_type") == MODEL_TYPES["OPENAI"]:
+        if api_key_is_invalid(config.get("openai_api_key"), "openai"):
+            openai_api_key = get_and_validate_api_key("openai")
+            config["openai_api_key"] = openai_api_key
 
-    if api_key_is_invalid(config.get("api_key")):
-        api_key = get_and_validate_api_key()
-        config["api_key"] = api_key
-        save_config(config)
+    if config.get("model_type") == MODEL_TYPES["ANTHROPIC"]:
+        if api_key_is_invalid(config.get("openai_api_key"), "openai"):
+            openai_api_key = get_and_validate_api_key("openai")
+            config["openai_api_key"] = openai_api_key
+        if api_key_is_invalid(config.get("anthropic_api_key"), "anthropic"):
+            anthropic_api_key = get_and_validate_api_key("anthropic")
+            config["anthropic_api_key"] = anthropic_api_key
+
+    save_config(config)
 
 
-def remove_api_key():
+def remove_api_keys():
     config = get_config()
-    config["api_key"] = None
+    config["openai_api_key"] = None
+    config["anthropic_api_key"] = None
     save_config(config)
 
 
@@ -148,6 +183,7 @@ def configure_model_type(config):
         choices=[
             {"name": "Local", "value": MODEL_TYPES["LOCAL"]},
             {"name": "OpenAI", "value": MODEL_TYPES["OPENAI"]},
+            {"name": "Anthropic", "value": MODEL_TYPES["ANTHROPIC"]},
         ]
     ).ask()
     config["model_type"] = model_type
@@ -156,7 +192,8 @@ def configure_model_type(config):
 
 CONFIGURE_STEPS = [
     configure_model_type,
-    configure_api_key,
+    configure_api_keys,
     configure_model_name_openai,
+    configure_model_name_anthropic,
     configure_model_name_local,
 ]
