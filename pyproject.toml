@@ -24,7 +24,7 @@ langchain = ">=0.0.223,<0.1.12"
 llama-cpp-python = "0.1.68"
 
 [tool.poetry.group.dev.dependencies]
-setuptools = "^68.0.0"
+setuptools = ">=68,<71"
 
 [build-system]
 requires = ["poetry-core"]
