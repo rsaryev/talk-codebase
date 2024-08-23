@@ -29,7 +29,7 @@ all = ["gpt4all", "llama-cpp-python", "openai", "tiktoken"]
 
 
 [tool.poetry.group.dev.dependencies]
-setuptools = "^68.0.0"
+setuptools = ">=68,<71"
 
 [build-system]
 requires = ["poetry-core"]
