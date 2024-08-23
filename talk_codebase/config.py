@@ -1,11 +1,20 @@
 import os
 
+openai_flag = True
+
+try:
+    import openai
+except: 
+    openai_flag = False 
+
 import gpt4all
-import openai
 import questionary
 import yaml
 
 from talk_codebase.consts import MODEL_TYPES
+
+
+
 
 config_path = os.path.join(os.path.expanduser("~"), ".talk_codebase_config.yaml")
 
@@ -142,13 +151,16 @@ def remove_model_type():
 def configure_model_type(config):
     if config.get("model_type"):
         return
+    
+    choices = [{"name": "Local", "value": MODEL_TYPES["LOCAL"]}]
+
+    if openai_flag: choices.append(
+            {"name": "OpenAI", "value": MODEL_TYPES["OPENAI"]})
+
 
     model_type = questionary.select(
         "🤖 Select model type:",
-        choices=[
-            {"name": "Local", "value": MODEL_TYPES["LOCAL"]},
-            {"name": "OpenAI", "value": MODEL_TYPES["OPENAI"]},
-        ]
+        choices=choices 
     ).ask()
     config["model_type"] = model_type
     save_config(config)
