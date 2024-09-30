@@ -31,7 +31,7 @@ multidict==6.0.4
 mypy-extensions==1.0.0
 networkx==3.1
 nltk==3.8.1
-numexpr==2.8.4
+numexpr==2.8.5
 numpy==1.24.3
 openai==0.27.7
 openapi-schema-pydantic==1.2.4
