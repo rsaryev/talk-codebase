@@ -1,41 +1,94 @@
 import os
 import time
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
-import gpt4all
 import questionary
+import requests
 from halo import Halo
 from langchain.vectorstores import FAISS
 from langchain.callbacks.manager import CallbackManager
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
-from langchain.llms import LlamaCpp
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings.base import Embeddings
+from langchain.llms.base import LLM
+from langchain.schema import BaseMessage, HumanMessage, AIMessage
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pydantic import Field
 
 from talk_codebase.consts import MODEL_TYPES
 from talk_codebase.utils import load_files, get_local_vector_store, calculate_cost, StreamStdOut
+
+
+class OllamaEmbeddings(Embeddings):
+    def __init__(self, model: str, api_url: str):
+        self.model = model
+        self.api_url = api_url
+        print(f"Ollama Embeddings API URL: {self.api_url}")  # Debug log
+
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        embeddings = []
+        for text in texts:
+            response = requests.post(
+                self.api_url,
+                json={"model": self.model, "prompt": text}
+            )
+            embeddings.append(response.json()['embedding'])
+        return embeddings
+
+    def embed_query(self, text: str) -> List[float]:
+        response = requests.post(
+            self.api_url,
+            json={"model": self.model, "prompt": text}
+        )
+        return response.json()['embedding']
+
+
+class OllamaChatModel(LLM):
+    model: str = Field(..., description="The name of the Ollama model to use")
+    api_url: str = Field(..., description="The API URL for the Ollama service")
+
+    def __init__(self, model: str, api_url: str):
+        super().__init__()
+        self.model = model
+        self.api_url = api_url
+        print(f"Ollama Chat API URL: {self.api_url}")  # Debug log
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
+        response = requests.post(
+            self.api_url,
+            json={"model": self.model, "prompt": prompt, "stream": False}
+        )
+        return response.json()['response']
+
+    @property
+    def _llm_type(self) -> str:
+        return "ollama"
 
 
 class BaseLLM:
 
     def __init__(self, root_dir, config):
         self.config = config
-        self.llm = self._create_model()
         self.root_dir = root_dir
+        self.embedding_model = self._create_embedding_model()
+        self.chat_model = self._create_chat_model()
         self.vector_store = self._create_store(root_dir)
 
     def _create_store(self, root_dir):
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def _create_model(self):
+    def _create_embedding_model(self):
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def _create_chat_model(self):
         raise NotImplementedError("Subclasses must implement this method.")
 
     def embedding_search(self, query, k):
         return self.vector_store.search(query, k=k, search_type="similarity")
 
     def _create_vector_store(self, embeddings, index, root_dir):
-        k = int(self.config.get("k"))
+        k = int(self.config.get("k", 2))
         index_path = os.path.join(root_dir, f"vector_store/{index}")
         new_db = get_local_vector_store(embeddings, index_path)
         if new_db is not None:
@@ -45,11 +98,15 @@ class BaseLLM:
         if len(docs) == 0:
             print("✘ No documents found")
             exit(0)
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(self.config.get("chunk_size")),
-                                                       chunk_overlap=int(self.config.get("chunk_overlap")))
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(self.config.get("chunk_size", 2056)),
+                                                       chunk_overlap=int(self.config.get("chunk_overlap", 256)),
+                                                       separators=["\n\n", "\n", " ", ""])
         texts = text_splitter.split_documents(docs)
-        if index == MODEL_TYPES["OPENAI"]:
-            cost = calculate_cost(docs, self.config.get("openai_model_name"))
+        
+        model_type = self.config.get("embedding_model_type")
+        cost = calculate_cost(texts, self.config.get("embedding_model_name"), model_type)
+        
+        if cost > 0:
             approve = questionary.select(
                 f"Creating a vector store will cost ~${cost:.5f}. Do you want to continue?",
                 choices=[
@@ -74,52 +131,112 @@ class BaseLLM:
     def send_query(self, query):
         retriever = self._create_store(self.root_dir)
         qa = RetrievalQA.from_chain_type(
-            llm=self.llm,
+            llm=self.chat_model,
             chain_type="stuff",
             retriever=retriever,
             return_source_documents=True
         )
-        docs = qa(query)
+        # Add a custom prompt to encourage more relevant responses
+        custom_prompt = f"""
+        You are an AI assistant specialized in analyzing codebases. 
+        Given the following query about the codebase, provide the most relevant and helpful response possible.
+        If you're not entirely sure, make an educated guess based on the context of the codebase.
+        Query: {query}
+        """
+        docs = qa({"query": custom_prompt})
+        
+        # Print the response
+        print("\n🤖 Response:")
+        print(docs['result'])
+        
+        # Print the source files
         file_paths = [os.path.abspath(s.metadata["source"]) for s in docs['source_documents']]
-        print('\n'.join([f'📄 {file_path}:' for file_path in file_paths]))
+        print('\n📁 Source files:')
+        print('\n'.join([f'- {file_path}' for file_path in file_paths]))
 
 
-class LocalLLM(BaseLLM):
+class OllamaLLM(BaseLLM):
 
     def _create_store(self, root_dir: str) -> Optional[FAISS]:
-        embeddings = HuggingFaceEmbeddings(model_name='all-MiniLM-L6-v2')
-        return self._create_vector_store(embeddings, MODEL_TYPES["LOCAL"], root_dir)
+        return self._create_vector_store(self.embedding_model, MODEL_TYPES["OLLAMA"], root_dir)
 
-    def _create_model(self):
-        os.makedirs(self.config.get("model_path"), exist_ok=True)
-        gpt4all.GPT4All.retrieve_model(model_name=self.config.get("local_model_name"),
-                                       model_path=self.config.get("model_path"))
-        model_path = os.path.join(self.config.get("model_path"), self.config.get("local_model_name"))
-        model_n_ctx = int(self.config.get("max_tokens"))
-        model_n_batch = int(self.config.get("n_batch"))
-        callbacks = CallbackManager([StreamStdOut()])
-        llm = LlamaCpp(model_path=model_path, n_ctx=model_n_ctx, n_batch=model_n_batch, callbacks=callbacks,
-                       verbose=False)
-        llm.client.verbose = False
-        return llm
+    def _create_embedding_model(self):
+        embedding_model = self.config.get("embedding_model_name")
+        embedding_api_url = self.config.get("embedding_api_endpoint")
+        print(f"Creating Ollama Embedding model: {embedding_model} with API URL: {embedding_api_url}")  # Debug log
+        return OllamaEmbeddings(
+            model=embedding_model,
+            api_url=embedding_api_url
+        )
+
+    def _create_chat_model(self):
+        chat_model = self.config.get("chat_model_name")
+        chat_api_url = self.config.get("chat_api_endpoint")
+        print(f"Creating Ollama Chat model: {chat_model} with API URL: {chat_api_url}")  # Debug log
+        return OllamaChatModel(
+            model=chat_model,
+            api_url=chat_api_url
+        )
 
 
 class OpenAILLM(BaseLLM):
     def _create_store(self, root_dir: str) -> Optional[FAISS]:
-        embeddings = OpenAIEmbeddings(openai_api_key=self.config.get("api_key"))
-        return self._create_vector_store(embeddings, MODEL_TYPES["OPENAI"], root_dir)
+        return self._create_vector_store(self.embedding_model, MODEL_TYPES["OPENAI"], root_dir)
 
-    def _create_model(self):
-        return ChatOpenAI(model_name=self.config.get("openai_model_name"),
-                          openai_api_key=self.config.get("api_key"),
-                          streaming=True,
-                          max_tokens=int(self.config.get("max_tokens")),
-                          callback_manager=CallbackManager([StreamStdOut()]),
-                          temperature=float(self.config.get("temperature")))
+    def _create_embedding_model(self):
+        return OpenAIEmbeddings(
+            model=self.config.get("embedding_model_name"),
+            openai_api_key=self.config.get("openai_compatible_api_key")
+        )
+
+    def _create_chat_model(self):
+        return ChatOpenAI(
+            model_name=self.config.get("chat_model_name"),
+            openai_api_key=self.config.get("openai_compatible_api_key"),
+            streaming=True,
+            max_tokens=int(self.config.get("max_tokens", 2056)),
+            callback_manager=CallbackManager([StreamStdOut()]),
+            temperature=float(self.config.get("temperature", 0.7)),
+            presence_penalty=0.6,  # Encourage the model to talk about new topics
+            frequency_penalty=0.6  # Discourage repetition
+        )
+
+
+class OpenAICompatibleLLM(BaseLLM):
+    def _create_store(self, root_dir: str) -> Optional[FAISS]:
+        return self._create_vector_store(self.embedding_model, MODEL_TYPES["OPENAI_COMPATIBLE"], root_dir)
+
+    def _create_embedding_model(self):
+        return OpenAIEmbeddings(
+            model=self.config.get("embedding_model_name"),
+            openai_api_key=self.config.get("openai_compatible_api_key"),
+            openai_api_base=self.config.get("openai_compatible_endpoint")
+        )
+
+    def _create_chat_model(self):
+        return ChatOpenAI(
+            model_name=self.config.get("chat_model_name"),
+            openai_api_key=self.config.get("openai_compatible_api_key"),
+            openai_api_base=self.config.get("openai_compatible_endpoint"),
+            streaming=True,
+            max_tokens=int(self.config.get("max_tokens", 2056)),
+            callback_manager=CallbackManager([StreamStdOut()]),
+            temperature=float(self.config.get("temperature", 0.7))
+        )
 
 
 def factory_llm(root_dir, config):
-    if config.get("model_type") == "openai":
+    embedding_type = config.get("embedding_model_type")
+    chat_type = config.get("chat_model_type")
+
+    if embedding_type != chat_type:
+        raise ValueError("Embedding and chat model types must be the same.")
+
+    if embedding_type == MODEL_TYPES["OPENAI"]:
         return OpenAILLM(root_dir, config)
+    elif embedding_type == MODEL_TYPES["OPENAI_COMPATIBLE"]:
+        return OpenAICompatibleLLM(root_dir, config)
+    elif embedding_type == MODEL_TYPES["OLLAMA"]:
+        return OllamaLLM(root_dir, config)
     else:
-        return LocalLLM(root_dir, config)
+        raise ValueError(f"Invalid model type: {embedding_type}")

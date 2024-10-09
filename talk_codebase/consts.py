@@ -12,9 +12,9 @@ ALLOW_FILES = ['.txt', '.js', '.mjs', '.ts', '.tsx', '.css', '.scss', '.less', '
 EXCLUDE_FILES = ['requirements.txt', 'package.json', 'package-lock.json', 'yarn.lock']
 MODEL_TYPES = {
     "OPENAI": "openai",
-    "LOCAL": "local",
+    "OPENAI_COMPATIBLE": "openai_compatible",
+    "OLLAMA": "ollama"
 }
-DEFAULT_MODEL_DIRECTORY = os.path.join(str(Path.home()), ".cache", "gpt4all").replace("\\", "\\\\")
 
 DEFAULT_CONFIG = {
     "max_tokens": "2056",
@@ -22,8 +22,6 @@ DEFAULT_CONFIG = {
     "chunk_overlap": "256",
     "k": "2",
     "temperature": "0.7",
-    "model_path": DEFAULT_MODEL_DIRECTORY,
-    "n_batch": "8",
 }
 
 LOADER_MAPPING = {

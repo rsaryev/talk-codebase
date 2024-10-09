@@ -1,23 +1,11 @@
 import os
-
-openai_flag = True
-
-try:
-    import openai
-except: 
-    openai_flag = False 
-
-import gpt4all
 import questionary
 import yaml
+import requests
 
 from talk_codebase.consts import MODEL_TYPES
 
-
-
-
 config_path = os.path.join(os.path.expanduser("~"), ".talk_codebase_config.yaml")
-
 
 def get_config():
     if os.path.exists(config_path):
@@ -27,148 +15,122 @@ def get_config():
         config = {}
     return config
 
-
 def save_config(config):
     with open(config_path, "w") as f:
         yaml.dump(config, f)
 
-
-def api_key_is_invalid(api_key):
-    if not api_key:
-        return True
+def get_ollama_models(purpose):
     try:
-        openai.api_key = api_key
-        openai.Engine.list()
-    except Exception:
-        return True
-    return False
+        if purpose == "chat":
+            response = requests.get("http://localhost:11434/api/tags")
+            if response.status_code == 200:
+                models = response.json()
+                return [model['name'] for model in models['models']]
+        elif purpose == "embedding":
+            # For now, we'll use a predefined list of Ollama embedding models
+            return ["nomic-embed-text", "all-MiniLM-L6-v2"]
+    except requests.RequestException:
+        print(f"Error: Unable to fetch Ollama {purpose} models. Make sure Ollama is running.")
+    return []
 
+def configure_api_key(config, model_type):
+    if model_type in [MODEL_TYPES["OPENAI"], MODEL_TYPES["OPENAI_COMPATIBLE"]]:
+        api_key = questionary.password("🤖 Enter your API key:").ask()
+        config["openai_compatible_api_key"] = api_key
+        save_config(config)
+        print("API key saved successfully.")
 
-def get_gpt_models(openai):
-    try:
-        model_lst = openai.Model.list()
-    except Exception:
-        print("✘ Failed to retrieve model list")
-        return []
+def configure_api_endpoint(config, purpose):
+    if config.get(f"{purpose}_model_type") == MODEL_TYPES["OPENAI_COMPATIBLE"]:
+        endpoint = questionary.text("🤖 Enter the API endpoint:").ask()
+        config["openai_compatible_endpoint"] = endpoint
+        save_config(config)
+        print(f"API endpoint for {purpose} set to: {endpoint}")
+    elif config.get(f"{purpose}_model_type") == MODEL_TYPES["OLLAMA"]:
+        if purpose == "chat":
+            config[f"{purpose}_api_endpoint"] = "http://localhost:11434/api/generate"
+        elif purpose == "embedding":
+            config[f"{purpose}_api_endpoint"] = "http://localhost:11434/api/embeddings"
+        save_config(config)
+        print(f"Ollama API endpoint for {purpose} set to: {config[f'{purpose}_api_endpoint']}")
 
-    return [i['id'] for i in model_lst['data'] if 'gpt' in i['id']]
-
-
-def configure_model_name_openai(config):
-    api_key = config.get("api_key")
-
-    if config.get("model_type") != MODEL_TYPES["OPENAI"] or config.get("openai_model_name"):
+def configure_model_name(config, purpose):
+    model_type = config.get(f"{purpose}_model_type")
+    
+    if model_type == MODEL_TYPES["OLLAMA"]:
+        ollama_models = get_ollama_models(purpose)
+        if not ollama_models:
+            print(f"❌ No Ollama models found for {purpose}. Please make sure Ollama is running and you have pulled some models.")
+            return
+        choices = [{"name": model, "value": model} for model in ollama_models]
+        model_name = questionary.select(f"🤖 Select Ollama model for {purpose}:", choices).ask()
+    elif model_type in [MODEL_TYPES["OPENAI"], MODEL_TYPES["OPENAI_COMPATIBLE"]]:
+        prompt = f"🤖 Enter the model name for {purpose} (e.g., text-embedding-ada-002 for embedding, gpt-3.5-turbo for chat):"
+        model_name = questionary.text(prompt).ask()
+    else:
+        print(f"Invalid model type: {model_type}")
         return
 
-    openai.api_key = api_key
-    gpt_models = get_gpt_models(openai)
-    choices = [{"name": model, "value": model} for model in gpt_models]
-
-    if not choices:
-        print("ℹ No GPT models available")
-        return
-
-    model_name = questionary.select("🤖 Select model name:", choices).ask()
-
-    if not model_name:
-        print("✘ No model selected")
-        return
-
-    config["openai_model_name"] = model_name
+    config[f"{purpose}_model_name"] = model_name
     save_config(config)
-    print("🤖 Model name saved!")
+    print(f"🤖 {purpose.capitalize()} model name saved!")
 
-
-def remove_model_name_openai():
-    config = get_config()
-    config["openai_model_name"] = None
-    save_config(config)
-
-
-def configure_model_name_local(config):
-    if config.get("model_type") != MODEL_TYPES["LOCAL"] or config.get("local_model_name"):
-        return
-
-    list_models = gpt4all.GPT4All.list_models()
-
-    def get_model_info(model):
-        return (
-            f"{model['name']} "
-            f"| {model['filename']} "
-            f"| {model['filesize']} "
-            f"| {model['parameters']} "
-            f"| {model['quant']} "
-            f"| {model['type']}"
-        )
-
+def configure_section(config, purpose):
     choices = [
-        {"name": get_model_info(model), "value": model['filename']} for model in list_models
+        {"name": "OpenAI", "value": MODEL_TYPES["OPENAI"]},
+        {"name": "OpenAI Compatible", "value": MODEL_TYPES["OPENAI_COMPATIBLE"]},
+        {"name": "Ollama (Local)", "value": MODEL_TYPES["OLLAMA"]}
     ]
 
-    model_name = questionary.select("🤖 Select model name:", choices).ask()
-    config["local_model_name"] = model_name
-    save_config(config)
-    print("🤖 Model name saved!")
-
-
-def remove_model_name_local():
-    config = get_config()
-    config["local_model_name"] = None
-    save_config(config)
-
-
-def get_and_validate_api_key():
-    prompt = "🤖 Enter your OpenAI API key: "
-    api_key = input(prompt)
-    while api_key_is_invalid(api_key):
-        print("✘ Invalid API key")
-        api_key = input(prompt)
-    return api_key
-
-
-def configure_api_key(config):
-    if config.get("model_type") != MODEL_TYPES["OPENAI"]:
-        return
-
-    if api_key_is_invalid(config.get("api_key")):
-        api_key = get_and_validate_api_key()
-        config["api_key"] = api_key
-        save_config(config)
-
-
-def remove_api_key():
-    config = get_config()
-    config["api_key"] = None
-    save_config(config)
-
-
-def remove_model_type():
-    config = get_config()
-    config["model_type"] = None
-    save_config(config)
-
-
-def configure_model_type(config):
-    if config.get("model_type"):
-        return
-    
-    choices = [{"name": "Local", "value": MODEL_TYPES["LOCAL"]}]
-
-    if openai_flag: choices.append(
-            {"name": "OpenAI", "value": MODEL_TYPES["OPENAI"]})
-
-
     model_type = questionary.select(
-        "🤖 Select model type:",
-        choices=choices 
+        f"🤖 Select model type for {purpose}:",
+        choices=choices
     ).ask()
-    config["model_type"] = model_type
+
+    config[f"{purpose}_model_type"] = model_type
     save_config(config)
 
+    if model_type in [MODEL_TYPES["OPENAI"], MODEL_TYPES["OPENAI_COMPATIBLE"]]:
+        configure_api_key(config, model_type)
+        if model_type == MODEL_TYPES["OPENAI_COMPATIBLE"]:
+            configure_api_endpoint(config, purpose)
+    elif model_type == MODEL_TYPES["OLLAMA"]:
+        configure_api_endpoint(config, purpose)
+
+    configure_model_name(config, purpose)
+
+def configure_embedding():
+    config = get_config()
+    configure_section(config, "embedding")
+
+def configure_chat():
+    config = get_config()
+    configure_section(config, "chat")
+
+def remove_configuration():
+    config = get_config()
+    keys_to_remove = [
+        "embedding_model_type", "embedding_model_name",
+        "chat_model_type", "chat_model_name",
+        "openai_compatible_api_key", "openai_compatible_endpoint",
+        "embedding_api_endpoint", "chat_api_endpoint"
+    ]
+    for key in keys_to_remove:
+        config.pop(key, None)
+    save_config(config)
+    print("Configuration removed successfully.")
 
 CONFIGURE_STEPS = [
-    configure_model_type,
-    configure_api_key,
-    configure_model_name_openai,
-    configure_model_name_local,
+    configure_embedding,
+    configure_chat,
 ]
+
+def configure(reset=False):
+    if reset:
+        remove_configuration()
+    
+    config = get_config()
+    for step in CONFIGURE_STEPS:
+        step()
+    
+    print("Configuration completed successfully.")
