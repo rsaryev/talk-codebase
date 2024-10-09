@@ -446,7 +446,7 @@ dev = ["flake8", "hypothesis", "ipython", "mypy (>=0.710)", "portray", "pytest (
 name = "diskcache"
 version = "5.6.1"
 description = "Disk Cache -- Disk and file backed persistent cache."
-optional = false
+optional = true
 python-versions = ">=3"
 files = [
     {file = "diskcache-5.6.1-py3-none-any.whl", hash = "sha256:558c6a2d5d7c721bb00e40711803d6804850c9f76c426ed81ecc627fe9d2ce2d"},
@@ -677,7 +677,7 @@ gitdb = ">=4.0.1,<5"
 name = "gpt4all"
 version = "1.0.1"
 description = "Python bindings for GPT4All"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "gpt4all-1.0.1-py3-none-macosx_10_9_universal2.whl", hash = "sha256:e400f99735fe5a1fe6b5fe6acaaa829a1aaa60c16e1ede433d57792235a3fdcf"},
@@ -1031,7 +1031,7 @@ requests = ">=2,<3"
 name = "llama-cpp-python"
 version = "0.1.68"
 description = "A Python wrapper for llama.cpp"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "llama_cpp_python-0.1.68.tar.gz", hash = "sha256:619ca317d771fc0c30ceba68c29c318287cd1cae2eaa14661aec675190295f19"},
@@ -1493,7 +1493,7 @@ files = [
 name = "openai"
 version = "0.27.8"
 description = "Python client library for the OpenAI API"
-optional = false
+optional = true
 python-versions = ">=3.7.1"
 files = [
     {file = "openai-0.27.8-py3-none-any.whl", hash = "sha256:e0a7c2f7da26bdbe5354b03c6d4b82a2f34bd4458c7a17ae1a7092c3e397e03c"},
@@ -2477,7 +2477,7 @@ files = [
 name = "tiktoken"
 version = "0.4.0"
 description = "tiktoken is a fast BPE tokeniser for use with OpenAI's models"
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "tiktoken-0.4.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:176cad7f053d2cc82ce7e2a7c883ccc6971840a4b5276740d0b732a2b2011f8a"},
@@ -2962,7 +2962,11 @@ files = [
 docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
 testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)"]
 
+[extras]
+all = ["gpt4all", "llama-cpp-python", "openai", "tiktoken"]
+local = ["gpt4all", "llama-cpp-python"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0"
-content-hash = "aa717ea6c7c359d5d767c86b792d14b57fe804f7abe03c811612fc02ada794ea"
+content-hash = "ab2cc94ae91acd592386537099f6cf9c23a2a856e6a37753605a5b1c1df423c2"

@@ -5,7 +5,7 @@ from git import Repo
 from langchain.vectorstores import FAISS
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
-from talk_codebase.consts import LOADER_MAPPING, EXCLUDE_FILES
+from talk_codebase.consts import LOADER_MAPPING, EXCLUDE_FILES, MODEL_TYPES
 
 
 def get_repo():
@@ -48,13 +48,20 @@ def load_files():
     return files
 
 
-def calculate_cost(texts, model_name):
-    enc = tiktoken.encoding_for_model(model_name)
-    all_text = ''.join([text.page_content for text in texts])
-    tokens = enc.encode(all_text)
-    token_count = len(tokens)
-    cost = (token_count / 1000) * 0.0004
-    return cost
+def calculate_cost(texts, model_name, model_type):
+    if model_type == MODEL_TYPES["OLLAMA"]:
+        return 0  # No cost for Ollama models
+
+    try:
+        enc = tiktoken.encoding_for_model(model_name)
+        all_text = ''.join([text.page_content for text in texts])
+        tokens = enc.encode(all_text)
+        token_count = len(tokens)
+        cost = (token_count / 1000) * 0.0004
+        return cost
+    except KeyError:
+        print(f"Warning: Unable to calculate cost for model {model_name}. Assuming no cost.")
+        return 0
 
 
 def get_local_vector_store(embeddings, path):
