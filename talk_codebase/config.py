@@ -13,6 +13,11 @@ def get_config():
             config = yaml.safe_load(f)
     else:
         config = {}
+    
+    # Set default value for frequency_penalty if not present
+    if 'frequency_penalty' not in config:
+        config['frequency_penalty'] = 0.0
+    
     return config
 
 def save_config(config):
@@ -106,6 +111,22 @@ def configure_embedding():
 def configure_chat():
     config = get_config()
     configure_section(config, "chat")
+    
+    # Add configuration for frequency_penalty
+    frequency_penalty = questionary.text(
+        "🤖 Enter the frequency penalty (default is 0.0, range is -2.0 to 2.0):",
+        default="0.0"
+    ).ask()
+    try:
+        frequency_penalty = float(frequency_penalty)
+        if -2.0 <= frequency_penalty <= 2.0:
+            config["frequency_penalty"] = frequency_penalty
+            save_config(config)
+            print(f"Frequency penalty set to: {frequency_penalty}")
+        else:
+            print("Invalid frequency penalty value. Using default (0.0).")
+    except ValueError:
+        print("Invalid input. Using default frequency penalty (0.0).")
 
 def remove_configuration():
     config = get_config()
@@ -113,7 +134,8 @@ def remove_configuration():
         "embedding_model_type", "embedding_model_name",
         "chat_model_type", "chat_model_name",
         "openai_compatible_api_key", "openai_compatible_endpoint",
-        "embedding_api_endpoint", "chat_api_endpoint"
+        "embedding_api_endpoint", "chat_api_endpoint",
+        "frequency_penalty"
     ]
     for key in keys_to_remove:
         config.pop(key, None)

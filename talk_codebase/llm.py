@@ -1,5 +1,6 @@
 import os
 import time
+import logging
 from typing import Optional, List, Dict, Any
 
 import questionary
@@ -19,12 +20,15 @@ from pydantic import Field
 from talk_codebase.consts import MODEL_TYPES
 from talk_codebase.utils import load_files, get_local_vector_store, calculate_cost, StreamStdOut
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class OllamaEmbeddings(Embeddings):
     def __init__(self, model: str, api_url: str):
         self.model = model
         self.api_url = api_url
-        print(f"Ollama Embeddings API URL: {self.api_url}")  # Debug log
+        logger.info(f"Ollama Embeddings API URL: {self.api_url}")
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         embeddings = []
@@ -52,7 +56,7 @@ class OllamaChatModel(LLM):
         super().__init__()
         self.model = model
         self.api_url = api_url
-        print(f"Ollama Chat API URL: {self.api_url}")  # Debug log
+        logger.info(f"Ollama Chat API URL: {self.api_url}")
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
         response = requests.post(
@@ -73,7 +77,9 @@ class BaseLLM:
         self.root_dir = root_dir
         self.embedding_model = self._create_embedding_model()
         self.chat_model = self._create_chat_model()
+        logger.info("Creating vector store...")
         self.vector_store = self._create_store(root_dir)
+        logger.info("Vector store created successfully.")
 
     def _create_store(self, root_dir):
         raise NotImplementedError("Subclasses must implement this method.")
@@ -92,11 +98,13 @@ class BaseLLM:
         index_path = os.path.join(root_dir, f"vector_store/{index}")
         new_db = get_local_vector_store(embeddings, index_path)
         if new_db is not None:
+            logger.info("Using existing vector store.")
             return new_db.as_retriever(search_kwargs={"k": k})
 
+        logger.info("Creating new vector store...")
         docs = load_files()
         if len(docs) == 0:
-            print("✘ No documents found")
+            logger.error("No documents found")
             exit(0)
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=int(self.config.get("chunk_size", 2056)),
                                                        chunk_overlap=int(self.config.get("chunk_overlap", 256)),
@@ -126,14 +134,15 @@ class BaseLLM:
             time.sleep(1.5)
 
         spinners.succeed(f"Created vector store")
+        logger.info("New vector store created successfully.")
         return db.as_retriever(search_kwargs={"k": k})
 
     def send_query(self, query):
-        retriever = self._create_store(self.root_dir)
+        logger.info(f"Processing query: {query}")
         qa = RetrievalQA.from_chain_type(
             llm=self.chat_model,
             chain_type="stuff",
-            retriever=retriever,
+            retriever=self.vector_store,
             return_source_documents=True
         )
         # Add a custom prompt to encourage more relevant responses
@@ -153,6 +162,7 @@ class BaseLLM:
         file_paths = [os.path.abspath(s.metadata["source"]) for s in docs['source_documents']]
         print('\n📁 Source files:')
         print('\n'.join([f'- {file_path}' for file_path in file_paths]))
+        logger.info("Query processed successfully.")
 
 
 class OllamaLLM(BaseLLM):
@@ -163,7 +173,7 @@ class OllamaLLM(BaseLLM):
     def _create_embedding_model(self):
         embedding_model = self.config.get("embedding_model_name")
         embedding_api_url = self.config.get("embedding_api_endpoint")
-        print(f"Creating Ollama Embedding model: {embedding_model} with API URL: {embedding_api_url}")  # Debug log
+        logger.info(f"Creating Ollama Embedding model: {embedding_model} with API URL: {embedding_api_url}")
         return OllamaEmbeddings(
             model=embedding_model,
             api_url=embedding_api_url
@@ -172,7 +182,7 @@ class OllamaLLM(BaseLLM):
     def _create_chat_model(self):
         chat_model = self.config.get("chat_model_name")
         chat_api_url = self.config.get("chat_api_endpoint")
-        print(f"Creating Ollama Chat model: {chat_model} with API URL: {chat_api_url}")  # Debug log
+        logger.info(f"Creating Ollama Chat model: {chat_model} with API URL: {chat_api_url}")
         return OllamaChatModel(
             model=chat_model,
             api_url=chat_api_url
@@ -184,12 +194,14 @@ class OpenAILLM(BaseLLM):
         return self._create_vector_store(self.embedding_model, MODEL_TYPES["OPENAI"], root_dir)
 
     def _create_embedding_model(self):
+        logger.info("Creating OpenAI Embedding model")
         return OpenAIEmbeddings(
             model=self.config.get("embedding_model_name"),
             openai_api_key=self.config.get("openai_compatible_api_key")
         )
 
     def _create_chat_model(self):
+        logger.info("Creating OpenAI Chat model")
         return ChatOpenAI(
             model_name=self.config.get("chat_model_name"),
             openai_api_key=self.config.get("openai_compatible_api_key"),
@@ -198,7 +210,7 @@ class OpenAILLM(BaseLLM):
             callback_manager=CallbackManager([StreamStdOut()]),
             temperature=float(self.config.get("temperature", 0.7)),
             presence_penalty=0.6,  # Encourage the model to talk about new topics
-            frequency_penalty=0.6  # Discourage repetition
+            frequency_penalty=float(self.config.get("frequency_penalty", 0.0))  # Use configured value or default to 0.0
         )
 
 
@@ -207,6 +219,7 @@ class OpenAICompatibleLLM(BaseLLM):
         return self._create_vector_store(self.embedding_model, MODEL_TYPES["OPENAI_COMPATIBLE"], root_dir)
 
     def _create_embedding_model(self):
+        logger.info("Creating OpenAI Compatible Embedding model")
         return OpenAIEmbeddings(
             model=self.config.get("embedding_model_name"),
             openai_api_key=self.config.get("openai_compatible_api_key"),
@@ -214,6 +227,7 @@ class OpenAICompatibleLLM(BaseLLM):
         )
 
     def _create_chat_model(self):
+        logger.info("Creating OpenAI Compatible Chat model")
         return ChatOpenAI(
             model_name=self.config.get("chat_model_name"),
             openai_api_key=self.config.get("openai_compatible_api_key"),
@@ -221,7 +235,8 @@ class OpenAICompatibleLLM(BaseLLM):
             streaming=True,
             max_tokens=int(self.config.get("max_tokens", 2056)),
             callback_manager=CallbackManager([StreamStdOut()]),
-            temperature=float(self.config.get("temperature", 0.7))
+            temperature=float(self.config.get("temperature", 0.7)),
+            frequency_penalty=float(self.config.get("frequency_penalty", 0.0))  # Use configured value or default to 0.0
         )
 
 
@@ -232,6 +247,7 @@ def factory_llm(root_dir, config):
     if embedding_type != chat_type:
         raise ValueError("Embedding and chat model types must be the same.")
 
+    logger.info(f"Creating LLM of type: {embedding_type}")
     if embedding_type == MODEL_TYPES["OPENAI"]:
         return OpenAILLM(root_dir, config)
     elif embedding_type == MODEL_TYPES["OPENAI_COMPATIBLE"]:
