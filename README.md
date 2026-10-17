@@ -1,3 +1,10 @@
+> **Looking for what I’m building next? Check out [Localix](https://github.com/rsaryev/localix).**
+>
+> I previously built auto-copilot-cli and talk-codebase. Now I’m building Localix: an open-source
+> workspace where you and AI agents share an editor, terminals, previews, and databases.
+>
+> Localix is in beta — feedback and contributions are welcome.
+
 # talk-codebase
 
 [![Node.js Package](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml/badge.svg)](https://github.com/rsaryev/talk-codebase/actions/workflows/python-publish.yml)
